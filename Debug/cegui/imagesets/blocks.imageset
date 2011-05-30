@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Imageset Name="Blocks" Imagefile="blocks.tga" >
+<Image Name="Image" XPos="0" YPos="0" Width="657" Height="509" />
+<Image Name="Root" XPos="0" YPos="0" Width="800" Height="600" />
+<Image Name="magic" XPos="0" YPos="0" Width="128" Height="128" />
+<Image Name="fire" XPos="128" YPos="0" Width="128" Height="128" />
+<Image Name="wood" XPos="256" YPos="0" Width="128" Height="128" />
+<Image Name="iron" XPos="384" YPos="0" Width="128" Height="128" />
+<Image Name="empty" XPos="512" YPos="0" Width="128" Height="128" />
+</Imageset>
+
