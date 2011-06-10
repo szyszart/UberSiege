@@ -1,0 +1,220 @@
+
+material _missing_material_ 
+{
+    receive_shadows off
+    technique
+    {
+        pass
+        {
+            ambient 0.1 0.1 0.1 1.0
+            diffuse 0.8 0.0 0.0 1.0
+            specular 0.5 0.5 0.5 1.0 12.5
+            emissive 0.3 0.3 0.3 1.0
+        }
+    }
+}
+
+material Jolts 
+{
+	receive_shadows on
+	technique
+	{
+		pass
+		{
+			cull_hardware none
+			ambient 0.05000000074505806 0.030398398637771606 0.024614090099930763 1.0
+			diffuse 0.040000001192092904 0.024318719272594436 0.01969127237336743 1.0
+			specular 0.5 0.5 0.5 1.0 12.5
+			emissive 0.0 0.0 0.0 1.0
+			scene_blend one zero
+			vray <bpy ID property from "MAJolts">
+		}
+	}
+}
+material Eye 
+{
+	receive_shadows on
+	technique
+	{
+		pass
+		{
+			cull_hardware none
+			ambient 1.0 0.9333333373069763 0.9742998480796814 1.0
+			diffuse 0.9025641083717346 0.8423931714000865 0.8793680736687541 1.0
+			specular 0.3076923191547394 0.3076923191547394 0.3076923191547394 1.0 12.5
+			emissive 0.0 0.0 0.0 1.0
+			scene_blend one zero
+			vray <bpy ID property from "MAEye">
+		}
+	}
+}
+material Eye1 
+{
+	receive_shadows on
+	technique
+	{
+		pass
+		{
+			cull_hardware none
+			ambient 0.0 0.0 0.0 1.0
+			diffuse 0.0 0.0 0.0 1.0
+			specular 0.5 0.5 0.5 1.0 12.5
+			emissive 0.0 0.0 0.0 1.0
+			scene_blend one zero
+			vray <bpy ID property from "MAEye1">
+		}
+	}
+}
+material Spodnie 
+{
+	receive_shadows on
+	technique
+	{
+		pass
+		{
+			cull_hardware none
+			ambient 0.1901722103357315 0.012649369426071644 0.0 1.0
+			diffuse 0.1521377705356146 0.01011949569164955 0.0 1.0
+			specular 0.5 0.5 0.5 1.0 12.5
+			emissive 0.0 0.0 0.0 1.0
+			scene_blend one zero
+			vray <bpy ID property from "MASpodnie">
+		}
+	}
+}
+material Buty 
+{
+	receive_shadows on
+	technique
+	{
+		pass
+		{
+			cull_hardware none
+			ambient 0.0 0.0 0.0 1.0
+			diffuse 0.0 0.0 0.0 1.0
+			specular 0.20512820780277252 0.20512820780277252 0.20512820780277252 1.0 12.5
+			emissive 0.0 0.0 0.0 1.0
+			scene_blend one zero
+			vray <bpy ID property from "MAButy">
+		}
+	}
+}
+material Helm 
+{
+	receive_shadows on
+	technique
+	{
+		pass
+		{
+			cull_hardware none
+			ambient 0.5595901012420654 0.5595901012420654 0.5595901012420654 1.0
+			diffuse 0.4476720876644862 0.4476720876644862 0.4476720876644862 1.0
+			specular 0.44871795177459717 0.44871795177459717 0.44871795177459717 1.0 12.5
+			emissive 0.0 0.0 0.0 1.0
+			scene_blend one zero
+			vray <bpy ID property from "MAHelm">
+		}
+	}
+}
+material Kapota 
+{
+	receive_shadows on
+	technique
+	{
+		pass
+		{
+			cull_hardware none
+			ambient 0.12823471426963806 0.11483998596668243 0.028361542150378227 1.0
+			diffuse 0.10258777294438737 0.09187199014234526 0.02268923405839851 1.0
+			specular 0.0 0.0 0.0 1.0 12.5
+			emissive 0.0 0.0 0.0 1.0
+			scene_blend one zero
+			vray <bpy ID property from "MAKapota">
+		}
+	}
+}
+material Skin 
+{
+	receive_shadows on
+	technique
+	{
+		pass
+		{
+			cull_hardware none
+			ambient 1.0 0.6553647518157959 0.39176028966903687 1.0
+			diffuse 0.800000011920929 0.5242918092651934 0.3134082364053761 1.0
+			specular 0.1794871836900711 0.1794871836900711 0.1794871836900711 1.0 12.5
+			emissive 0.0 0.0 0.0 1.0
+			scene_blend one zero
+			vray <bpy ID property from "MASkin">
+		}
+	}
+}
+material Zeby 
+{
+	receive_shadows on
+	technique
+	{
+		pass
+		{
+			cull_hardware none
+			ambient 1.0 1.0 1.0 1.0
+			diffuse 0.800000011920929 0.800000011920929 0.800000011920929 1.0
+			specular 0.5 0.5 0.5 1.0 12.5
+			emissive 0.0 0.0 0.0 1.0
+			scene_blend one zero
+			vray <bpy ID property from "MAZeby">
+		}
+	}
+}
+material Sw_pommel 
+{
+	receive_shadows on
+	technique
+	{
+		pass
+		{
+			cull_hardware none
+			ambient 0.800000011920929 0.800000011920929 0.800000011920929 1.0
+			diffuse 0.6400000190734865 0.6400000190734865 0.6400000190734865 1.0
+			specular 0.7051281929016113 0.7051281929016113 0.7051281929016113 1.0 12.5
+			emissive 0.0 0.0 0.0 1.0
+			scene_blend one zero
+			vray <bpy ID property from "MASw_pommel">
+		}
+	}
+}
+material Sw_hilt 
+{
+	receive_shadows on
+	technique
+	{
+		pass
+		{
+			cull_hardware none
+			ambient 0.11068471521139145 0.04089127853512764 0.0 1.0
+			diffuse 0.08854777348857779 0.03271302331556414 0.0 1.0
+			specular 0.0 0.0 0.0 1.0 12.5
+			emissive 0.0 0.0 0.0 1.0
+			scene_blend one zero
+			vray <bpy ID property from "MASw_hilt">
+		}
+	}
+}
+material Sw_hilt_iron 
+{
+	receive_shadows on
+	technique
+	{
+		pass
+		{
+			cull_hardware none
+			ambient 0.033100634813308716 0.033100634813308716 0.033100634813308716 1.0
+			diffuse 0.02648050824523729 0.02648050824523729 0.02648050824523729 1.0
+			specular 0.5 0.5 0.5 1.0 12.5
+			emissive 0.0 0.0 0.0 1.0
+			scene_blend one zero
+			vray <bpy ID property from "MASw_hilt_iron">
+		}
+	}
+}
