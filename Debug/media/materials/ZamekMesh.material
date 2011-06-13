@@ -1,0 +1,48 @@
+
+material _missing_material_ 
+{
+    receive_shadows off
+    technique
+    {
+        pass
+        {
+            ambient 0.1 0.1 0.1 1.0
+            diffuse 0.8 0.0 0.0 1.0
+            specular 0.5 0.5 0.5 1.0 12.5
+            emissive 0.3 0.3 0.3 1.0
+        }
+    }
+}
+
+material Wenge Wood 
+{
+	receive_shadows on
+	technique
+	{
+		pass
+		{
+			cull_hardware none
+			ambient 0.48876655101776123 0.36687955260276794 0.2911711037158966 1.0
+			diffuse 0.3910132466407603 0.29350364645575944 0.23293688644374733 1.0
+			specular 0.0 0.0 0.0 1.0 43.25
+			emissive 0.0 0.0 0.0 1.0
+			scene_blend one zero
+		}
+	}
+}
+material ruined.stone 
+{
+	receive_shadows on
+	technique
+	{
+		pass
+		{
+			cull_hardware none
+			ambient 0.800000011920929 0.800000011920929 0.800000011920929 1.0
+			diffuse 0.4985460832498383 0.4985460832498383 0.4985460832498383 1.0
+			specular 0.05921735242009163 0.05921735242009163 0.05921735242009163 1.0 6.75
+			emissive 0.0 0.0 0.0 1.0
+			scene_blend one zero
+		}
+	}
+}

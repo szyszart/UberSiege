@@ -7,9 +7,50 @@
 *.o
 *.so
 
+<<<<<<< HEAD
 # Logs and databases #
 ######################
 *.log
 *.tlog
 *.sql
 *.sqlite
+=======
+#OS junk files
+[Tt]humbs.db
+.DS_Store?
+ehthumbs.db
+Icon?
+
+#Visual Studio files
+*.[Oo]bj
+*.user
+*.aps
+*.pch
+*.vspscc
+*.vssscc
+*_i.c
+*_p.c
+*.ncb
+*.suo
+*.tlb
+*.tlh
+*.bak
+*.[Cc]ache
+*.ilk
+*.log
+*.lib
+*.sbr
+*.sdf
+*.opensdf
+*.tlog
+*.idb
+*.pdb
+*.lastbuildstate
+*.obj
+ipch/
+obj/
+Ankh.NoLoad
+
+# Office Temp Files
+~$*
+>>>>>>> upstream/master

@@ -14,22 +14,6 @@ material _missing_material_
     }
 }
 
-material Jolts 
-{
-	receive_shadows on
-	technique
-	{
-		pass
-		{
-			cull_hardware none
-			ambient 0.05000000074505806 0.030398398637771606 0.024614090099930763 1.0
-			diffuse 0.040000001192092904 0.024318719272594436 0.01969127237336743 1.0
-			specular 0.5 0.5 0.5 1.0 12.5
-			emissive 0.0 0.0 0.0 1.0
-			scene_blend one zero
-		}
-	}
-}
 material Eye 
 {
 	receive_shadows on
@@ -70,8 +54,8 @@ material Spodnie
 		pass
 		{
 			cull_hardware none
-			ambient 0.1901722103357315 0.012649369426071644 0.0 1.0
-			diffuse 0.1521377705356146 0.01011949569164955 0.0 1.0
+			ambient 0.0577998161315918 0.008643604815006256 0.0 1.0
+			diffuse 0.04623985359430094 0.006914883955044804 0.0 1.0
 			specular 0.5 0.5 0.5 1.0 12.5
 			emissive 0.0 0.0 0.0 1.0
 			scene_blend one zero
@@ -94,22 +78,6 @@ material Buty
 		}
 	}
 }
-material Helm 
-{
-	receive_shadows on
-	technique
-	{
-		pass
-		{
-			cull_hardware none
-			ambient 0.5595901012420654 0.5595901012420654 0.5595901012420654 1.0
-			diffuse 0.4476720876644862 0.4476720876644862 0.4476720876644862 1.0
-			specular 0.44871795177459717 0.44871795177459717 0.44871795177459717 1.0 12.5
-			emissive 0.0 0.0 0.0 1.0
-			scene_blend one zero
-		}
-	}
-}
 material Kapota 
 {
 	receive_shadows on
@@ -118,8 +86,8 @@ material Kapota
 		pass
 		{
 			cull_hardware none
-			ambient 0.12823471426963806 0.11483998596668243 0.028361542150378227 1.0
-			diffuse 0.10258777294438737 0.09187199014234526 0.02268923405839851 1.0
+			ambient 0.0290976632386446 0.01879170909523964 0.01388255599886179 1.0
+			diffuse 0.023278130937786856 0.01503336750020634 0.011106044964582396 1.0
 			specular 0.0 0.0 0.0 1.0 12.5
 			emissive 0.0 0.0 0.0 1.0
 			scene_blend one zero
@@ -142,7 +110,7 @@ material Skin
 		}
 	}
 }
-material Zeby 
+material Kolczuga 
 {
 	receive_shadows on
 	technique
@@ -150,8 +118,8 @@ material Zeby
 		pass
 		{
 			cull_hardware none
-			ambient 1.0 1.0 1.0 1.0
-			diffuse 0.800000011920929 0.800000011920929 0.800000011920929 1.0
+			ambient 0.11493139714002609 0.11493139714002609 0.11493139714002609 1.0
+			diffuse 0.0919451190821099 0.0919451190821099 0.0919451190821099 1.0
 			specular 0.5 0.5 0.5 1.0 12.5
 			emissive 0.0 0.0 0.0 1.0
 			scene_blend one zero
@@ -201,6 +169,70 @@ material Sw_hilt_iron
 			ambient 0.033100634813308716 0.033100634813308716 0.033100634813308716 1.0
 			diffuse 0.02648050824523729 0.02648050824523729 0.02648050824523729 1.0
 			specular 0.5 0.5 0.5 1.0 12.5
+			emissive 0.0 0.0 0.0 1.0
+			scene_blend one zero
+		}
+	}
+}
+material Helm1 
+{
+	receive_shadows on
+	technique
+	{
+		pass
+		{
+			cull_hardware none
+			ambient 0.800000011920929 0.800000011920929 0.800000011920929 1.0
+			diffuse 0.6400000190734865 0.6400000190734865 0.6400000190734865 1.0
+			specular 0.699999988079071 0.699999988079071 0.699999988079071 1.0 12.5
+			emissive 0.0 0.0 0.0 1.0
+			scene_blend one zero
+		}
+	}
+}
+material Helm2 
+{
+	receive_shadows on
+	technique
+	{
+		pass
+		{
+			cull_hardware none
+			ambient 0.21402908861637115 0.21402908861637115 0.21402908861637115 1.0
+			diffuse 0.17122327344452248 0.17122327344452248 0.17122327344452248 1.0
+			specular 0.10000000894069672 0.10000000894069672 0.10000000894069672 1.0 12.5
+			emissive 0.0 0.0 0.0 1.0
+			scene_blend one zero
+		}
+	}
+}
+material Bowstring 
+{
+	receive_shadows on
+	technique
+	{
+		pass
+		{
+			cull_hardware none
+			ambient 0.0 0.0 0.0 1.0
+			diffuse 0.0 0.0 0.0 1.0
+			specular 0.5 0.5 0.5 1.0 12.5
+			emissive 0.0 0.0 0.0 1.0
+			scene_blend one zero
+		}
+	}
+}
+material Bow 
+{
+	receive_shadows on
+	technique
+	{
+		pass
+		{
+			cull_hardware none
+			ambient 0.013409310951828957 0.0027700543869286776 0.0007113860920071602 1.0
+			diffuse 0.010727448921314608 0.0022160435425645636 0.0005691088820861112 1.0
+			specular 0.09756097197532654 0.09756097197532654 0.09756097197532654 1.0 12.5
 			emissive 0.0 0.0 0.0 1.0
 			scene_blend one zero
 		}

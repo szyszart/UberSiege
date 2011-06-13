@@ -1,91 +1,153 @@
 #include "InputFrameListener.h"
 #include "Application.h"
 #include "PuzzleBoard.h"
+#include "Simulation.h"
 #include <iostream>
 
-bool InputFrameListener::keyPressed(const OIS::KeyEvent& evt) {
-	switch(evt.key) {
-		// pierwszy gracz
-		case OIS::KC_W:
-			app->getBoardWidget()->moveUp();
+InputFrameListener::InputFrameListener(Application* app) {
+	this->app = app;
+	this->window = app->getRenderWindow();
+	isRunning = true;
+
+	// TODO: imiona graczy
+	simulation = new Simulation(app);
+	MapInfo info;
+	app->loadMap("map1", info);
+	simulation->loadMap(info);
+	simulation->setPlayersCount(2);
+	player1 = new Player("p1");
+	player2 = new Player("p2");
+	simulation->addPlayer(player1);
+	simulation->addPlayer(player2);	
+
+	// odczytaj uchwyt okna i utwórz obiekt obs³uguj¹cy urz¹dzenia wejœciowe
+	OIS::ParamList params;
+	unsigned int wndHandle = 0;
+	std::ostringstream wndHandleString;
+	window->getCustomAttribute("WINDOW", &wndHandle);
+	wndHandleString << wndHandle;
+	params.insert(std::make_pair("WINDOW", wndHandleString.str()));
+	inputManager = OIS::InputManager::createInputSystem(params);
+
+	keyboard = (OIS::Keyboard*) inputManager->createInputObject(OIS::OISKeyboard, true);
+	mouse = (OIS::Mouse*) inputManager->createInputObject(OIS::OISMouse, true);
+
+	mouse->setEventCallback(this);
+	keyboard->setEventCallback(this);
+
+	initialize();
+	scanForLayouts(player1, boardWidget1);
+	scanForLayouts(player2, boardWidget2);
+}
+
+InputFrameListener::~InputFrameListener() {
+	inputManager->destroyInputObject(mouse);
+	inputManager->destroyInputObject(keyboard);
+	OIS::InputManager::destroyInputSystem(inputManager);	
+
+	delete player1;
+	delete player2;
+	delete boardWidget1;
+	delete boardWidget2;
+	delete simulation;
+}
+
+void InputFrameListener::bindKey(OIS::KeyCode code, Action a) {
+	bindings[code] = a;
+}
+
+void InputFrameListener::unbindKey(OIS::KeyCode code) {
+	bindings.erase(code);
+}
+
+void InputFrameListener::scanForLayouts(Player* p, PuzzleBoardWidget* pbw) {
+	std::vector<std::string> layouts = app->getLayoutFinder()->scan(p->getBoard());
+	if(layouts.size() > 0)
+		pbw->refreshAll();
+}
+
+void InputFrameListener::processAction(Action a) {	
+	switch(a) {
+		case P1_MOVE_LEFT:
+			boardWidget1->moveLeft();
 			break;
-		case OIS::KC_S:
-			app->getBoardWidget()->moveDown();
+		case P1_MOVE_RIGHT:	
+			boardWidget1->moveRight();
 			break;
-		case OIS::KC_A:
-			app->getBoardWidget()->moveLeft();
+		case P1_MOVE_UP:
+			boardWidget1->moveUp();
 			break;
-		case OIS::KC_D:
-			app->getBoardWidget()->moveRight();
+		case P1_MOVE_DOWN:
+			boardWidget1->moveDown();
 			break;
-		case OIS::KC_Q:
+		case P1_SELECT:
 		{
-			app->getBoardWidget()->selectCurrent();
-			std::vector<std::string> layouts = app->getLayoutFinder()->scan(app->getBoard());
-			if(layouts.size() > 0)
-				app->getBoardWidget()->refreshAll();
+			boardWidget1->selectCurrent();
+			scanForLayouts(player1, boardWidget1);
 		}
 			break;
-		case OIS::KC_E:
+		case P1_CLEAR:
 		{
-			app->getBoardWidget()->accept();
-			std::vector<std::string> layouts = app->getLayoutFinder()->scan(app->getBoard());
-			if(layouts.size() > 0)
-				app->getBoardWidget()->refreshAll();
+			boardWidget1->clear();
+			scanForLayouts(player1, boardWidget1);
 		}
 			break;
-		case OIS::KC_Z:
+		case P1_CONFIRM:
 		{
-			app->getBoardWidget()->clear();
-			std::vector<std::string> layouts = app->getLayoutFinder()->scan(app->getBoard());
-			if(layouts.size() > 0)
-				app->getBoardWidget()->refreshAll();			
+			boardWidget1->accept();
+			scanForLayouts(player1, boardWidget1);
+		}
+			break;	
+		case P2_MOVE_LEFT:
+			boardWidget2->moveLeft();
+			break;
+		case P2_MOVE_RIGHT:
+			boardWidget2->moveRight();
+			break;
+		case P2_MOVE_UP:
+			boardWidget2->moveUp();
+			break;
+		case P2_MOVE_DOWN:
+			boardWidget2->moveDown();
+			break;
+		case P2_SELECT:
+		{
+			boardWidget2->selectCurrent();
+			scanForLayouts(player2, boardWidget2);
 		}
 			break;
-		// drugi gracz
-		case OIS::KC_I:
-			app->getBoardWidget2()->moveUp();
-			break;
-		case OIS::KC_K:
-			app->getBoardWidget2()->moveDown();
-			break;
-		case OIS::KC_J:
-			app->getBoardWidget2()->moveLeft();
-			break;
-		case OIS::KC_L:
-			app->getBoardWidget2()->moveRight();
-			break;
-		case OIS::KC_U:
+		case P2_CLEAR:
 		{
-			app->getBoardWidget2()->selectCurrent();
-			std::vector<std::string> layouts = app->getLayoutFinder()->scan(app->getBoard2());
-			if(layouts.size() > 0)
-				app->getBoardWidget2()->refreshAll();
+			boardWidget2->clear();
+			scanForLayouts(player2, boardWidget2);
 		}
 			break;
-		case OIS::KC_O:
+		case P2_CONFIRM:
 		{
-			app->getBoardWidget2()->accept();
-			std::vector<std::string> layouts = app->getLayoutFinder()->scan(app->getBoard2());
-			if(layouts.size() > 0)
-				app->getBoardWidget2()->refreshAll();
+			boardWidget2->accept();
+			scanForLayouts(player2, boardWidget2);
 		}
-			break;
-		case OIS::KC_M:
-		{
-			app->getBoardWidget2()->clear();
-			std::vector<std::string> layouts = app->getLayoutFinder()->scan(app->getBoard2());
-			if(layouts.size() > 0)
-				app->getBoardWidget2()->refreshAll();
-		}
-			break;
-		// pozosta³e
-		case OIS::KC_ESCAPE:
-			isRunning = false;
 			break;
 		default:
 			break;
 	}
+}
+
+bool InputFrameListener::keyPressed(const OIS::KeyEvent& evt) {
+	KeyBindings::iterator it = bindings.find(evt.key);
+
+	// klawisze przypisane na sta³e
+	switch(evt.key) {
+		case OIS::KC_ESCAPE:
+			isRunning = false;
+			break;
+		default:
+			// czy wciœniêto klawisz przypisany jakiejœ akcji
+			if(it != bindings.end())
+				processAction(it->second);		
+			break;
+	}
+
 	CEGUI::System& sys = CEGUI::System::getSingleton();
 	sys.injectKeyDown(evt.key);
 	sys.injectChar(evt.text);	
@@ -133,64 +195,61 @@ bool InputFrameListener::mouseReleased(const OIS::MouseEvent& evt, OIS::MouseBut
 	return true; 
 }
 
-InputFrameListener::InputFrameListener(Application* a, Ogre::RenderWindow* window) {
-	app = a;
-	isRunning = true;
+void InputFrameListener::initialize() {
+	CEGUI::OgreRenderer* renderer = app->getGUIRenderer();
 
-	this->window = window;
-	OIS::ParamList params;
-	unsigned int wndHandle = 0;
-	std::ostringstream wndHandleString;
-	window->getCustomAttribute("WINDOW", &wndHandle);
-	wndHandleString << wndHandle;
-	params.insert(std::make_pair("WINDOW", wndHandleString.str()));
-	inputManager = OIS::InputManager::createInputSystem(params);
+	CEGUI::Imageset::setDefaultResourceGroup("Imagesets");
+	CEGUI::Font::setDefaultResourceGroup("Fonts");
+	CEGUI::Scheme::setDefaultResourceGroup("Schemes");
+	CEGUI::WidgetLookManager::setDefaultResourceGroup("LookNFeel");
+	CEGUI::WindowManager::setDefaultResourceGroup("Layouts");
 
-	keyboard = (OIS::Keyboard*) inputManager->createInputObject(OIS::OISKeyboard, true);
-	mouse = (OIS::Mouse*) inputManager->createInputObject(OIS::OISMouse, true);
+	CEGUI::SchemeManager::getSingleton().create("WindowsLook.scheme");
+	CEGUI::System::getSingleton().setDefaultMouseCursor("WindowsLook", "MouseArrow");
+	CEGUI::Window* sheet = CEGUI::WindowManager::getSingleton().createWindow("DefaultWindow", "_MasterRoot");
+	CEGUI::System::getSingleton().setGUISheet(sheet);
 
-	mouse->setEventCallback(this);
-	keyboard->setEventCallback(this);
+	CEGUI::ImagesetManager::getSingleton().create("blocks.imageset");
 
-	// odœwie¿ pierwsz¹ tablicê klocków
-	std::vector<std::string> layouts = app->getLayoutFinder()->scan(app->getBoard());
-	if(layouts.size() > 0)
-		app->getBoardWidget()->refreshAll();
+	player1->getBoard()->randomize();
+	player2->getBoard()->randomize();
 
-	layouts = app->getLayoutFinder()->scan(app->getBoard2());
-	if(layouts.size() > 0)
-		app->getBoardWidget2()->refreshAll();
-}
+	boardWidget1 = new PuzzleBoardWidget(player1->getBoard());
+	sheet->addChildWindow(boardWidget1->getWindow());
+	boardWidget1->getWindow()->setPosition(CEGUI::UVector2(CEGUI::UDim(0.0, 0), CEGUI::UDim(0.0, 0)));
 
-InputFrameListener::~InputFrameListener() {
-	inputManager->destroyInputObject(mouse);
-	inputManager->destroyInputObject(keyboard);
-	OIS::InputManager::destroyInputSystem(inputManager);	
+	boardWidget2 = new PuzzleBoardWidget(player2->getBoard());
+	sheet->addChildWindow(boardWidget2->getWindow());
+	CEGUI::UDim posX = CEGUI::UDim(1.0, 0) - boardWidget2->getWindow()->getWidth();
+	CEGUI::UDim posY = CEGUI::UDim(1.0, 0) - boardWidget2->getWindow()->getHeight();
+	boardWidget2->getWindow()->setPosition(CEGUI::UVector2(posX, posY));
 }
 
 bool InputFrameListener::frameStarted(const Ogre::FrameEvent& evt) {
 	keyboard->capture();	
-	mouse->capture();		
+	mouse->capture();	
 
-	if(keyboard->isKeyDown(OIS::KC_C))
-		app->getCameraNode()->translate(0, 0, -10);
-	if(keyboard->isKeyDown(OIS::KC_V))
-		app->getCameraNode()->translate(0, 0, 10);
-	if(keyboard->isKeyDown(OIS::KC_B))
-		app->getCameraNode()->translate(0, -10, 0);
-	if(keyboard->isKeyDown(OIS::KC_N))
-		app->getCameraNode()->translate(0, 10, 0);
-	if(keyboard->isKeyDown(OIS::KC_1))
-		app->getCameraNode()->translate(-10, 0, 0);
-	if(keyboard->isKeyDown(OIS::KC_2))
-		app->getCameraNode()->translate(10, 0, 0);
-	if(keyboard->isKeyDown(OIS::KC_G))
-		app->getCameraNode()->yaw(Ogre::Radian(-0.01));
-	if(keyboard->isKeyDown(OIS::KC_H))
-		app->getCameraNode()->yaw(Ogre::Radian(0.01));
-	if(keyboard->isKeyDown(OIS::KC_3))
-		std::cout << app->getCameraNode()->getPosition().x << ", " << app->getCameraNode()->getPosition().y << ", " <<  app->getCameraNode()->getPosition().z << "(" <<  app->getCameraNode()->getOrientation().getYaw() << ")" << std::endl;
+	simulation->tick(evt.timeSinceLastFrame);
 
+	Ogre::SceneNode* cameraNode = simulation->getCameraNode();
+	if(keyboard->isKeyDown(OIS::KC_5)) {
+		cameraNode->rotate(Ogre::Vector3::UNIT_Y, Ogre::Radian(-0.1),Ogre::Node::TS_WORLD);
+	}
+	if(keyboard->isKeyDown(OIS::KC_6)) {
+		cameraNode->rotate(Ogre::Vector3::UNIT_Y, Ogre::Radian(0.1),Ogre::Node::TS_WORLD);
+	}
+	if(keyboard->isKeyDown(OIS::KC_1)) {
+		cameraNode->translate(0, -0.1, 0);		
+	}
+	if(keyboard->isKeyDown(OIS::KC_2)) {
+		cameraNode->translate(0, 0.1, 0);
+	}
+	if(keyboard->isKeyDown(OIS::KC_3)) {
+		cameraNode->rotate(Ogre::Vector3::UNIT_X, Ogre::Radian(-0.01),Ogre::Node::TS_WORLD);
+	}
+	if(keyboard->isKeyDown(OIS::KC_4)) {
+		cameraNode->rotate(Ogre::Vector3::UNIT_X, Ogre::Radian(0.01),Ogre::Node::TS_WORLD);
+	}
 
 	if(window->isClosed() || !isRunning)
 		return false;

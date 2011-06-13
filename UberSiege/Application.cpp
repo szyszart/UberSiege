@@ -4,38 +4,250 @@
 #include <iostream>
 #include <cstdlib>
 
-Application::Application(): root(NULL), sceneManager(NULL), listener(NULL), renderer(NULL) {
+class LogicProcessor {
+public:
+	static void clearHandlers() { handlers.clear(); }
+    static void registerEvents(luabind::object const& table);
+	static UnitHandlers getHandlers() { return handlers; }
+private:
+    static UnitHandlers handlers;
+};
+UnitHandlers LogicProcessor::handlers;
+
+void LogicProcessor::registerEvents(luabind::object const& table) {
+	if(luabind::type(table) == LUA_TTABLE) {
+		for(luabind::iterator i(table), end; i != end; ++i) {
+			try {
+				std::string key = luabind::object_cast<std::string>(i.key());
+				luabind::object callback = *i;
+				if(luabind::type(callback) == LUA_TFUNCTION) {
+					handlers[key] = callback;
+				}
+				else std::cerr << "registerEvents: expected a function!" << std::endl;
+			}
+			catch(luabind::cast_failed e) {
+				std::cerr << "registerEvents: invalid key, expected a string!" << std::endl;				
+			}
+		}
+	}
+	else std::cerr << "registerEvents: invalid arguments, expected a table!" << std::endl;
+}
+
+Application::Application(): root(NULL), sceneManager(NULL), listener(NULL), camera(NULL), renderer(NULL), window(NULL) {
 	running = false;
-	board = new PuzzleBoard();
-	board2 = new PuzzleBoard();
-	boardWidget = boardWidget2 = NULL;
 	layoutFinder = new BoardLayoutFinder();
 
-	// TODO: odczytywanie z pliku konfiguracyjnego
-	layoutFinder->addLayout("simple", std::pair<std::string, std::string>("ii", ""));
-	layoutFinder->addLayout("dragon", std::pair<std::string, std::string>("fmf", "fff"));
+	lua = luaL_newstate();
+	luaL_openlibs(lua);
+	luabind::open(lua);
 }
 
 Application::~Application() {
 	if(renderer) 
-		CEGUI::OgreRenderer::destroySystem();
-	
-	if(boardWidget)
-		delete boardWidget;
-	delete board;
-
-	if(boardWidget2)
-		delete boardWidget2;
-	delete board2;
+		CEGUI::OgreRenderer::destroySystem();	
 
 	delete layoutFinder;
-
 	delete listener;
-	
-	delete mTerrainGlobals;
-	delete mTerrainGroup;
-
 	delete root;
+
+	unitTypes.clear();
+
+//	if(lua)
+	//	lua_close(lua);
+}
+
+Ogre::Vector3 parsePoint(luabind::object o) {
+	return Ogre::Vector3(luabind::object_cast<double>(o[1]),
+		luabind::object_cast<double>(o[2]),
+		luabind::object_cast<double>(o[3]));
+}
+
+bool Application::loadMap(std::string name, MapInfo& info) {
+	std::string filename = name + ".lua";
+	if(luaL_dofile(lua, filename.c_str()) != 0) {
+		std::cerr << lua_tostring(lua, -1) << std::endl;
+        lua_pop(lua, 1);
+		return false;
+    }
+
+	try {
+		info.heightMap = luabind::object_cast<std::string>(luabind::globals(lua)["heightMap"]);
+	}
+	catch(luabind::cast_failed e) {
+		std::cerr << "loadMap: invalid heightmap name!" << std::endl;				
+		return false;
+	}
+
+	luabind::object layouts = luabind::globals(lua)["mountPoints"];
+	if(luabind::type(layouts) == LUA_TTABLE) {
+		for(luabind::iterator i(layouts), end; i != end; ++i) {			
+			luabind::object mountPoint = *i;
+			if(luabind::type(mountPoint) == LUA_TTABLE) {
+				try {
+					MountPoint mp;
+					mp.pos = parsePoint(mountPoint["pos"]);
+					mp.scale = parsePoint(mountPoint["scale"]);
+					mp.rot = luabind::object_cast<double>(mountPoint["rot"]);
+					info.mountPoints.push_back(mp);
+				}
+				catch(luabind::cast_failed e) {
+					std::cerr << "loadMap: invalid mount point attributes!" << std::endl;			
+					return false;
+				}
+			}
+			else {
+				std::cerr << "loadMap: invalid mount point, expected a table!" << std::endl;			
+				return false;
+			}
+		}
+	}
+	else {
+		std::cerr << "loadMap: invalid mount points, expected a table!" << std::endl;				
+		return false;
+	}
+
+	luabind::object path = luabind::globals(lua)["path"];
+	if(luabind::type(path) == LUA_TTABLE) {
+		try {
+			info.pathStart = parsePoint(path["startPoint"]);
+			info.pathEnd = parsePoint(path["endPoint"]);
+		}
+		catch(luabind::cast_failed e) {
+			std::cerr << "loadMap: invalid path points!" << std::endl;				
+			return false;
+		}
+	}
+	else {
+		std::cerr << "loadMap: invalid path points, expected a table!" << std::endl;				
+		return false;
+	}
+	return true;
+}
+
+void Application::processConfig() {	
+    if(luaL_dofile(lua, "config.lua") != 0) {
+		std::cerr << lua_tostring(lua, -1) << std::endl;
+        lua_pop(lua, 1);
+		return;
+    }
+
+	readLayouts();
+	readKeyBindings();
+	processUnitScripts();
+}
+
+void Application::processUnitScripts() {
+	std::vector<std::string> names;
+	luabind::object layouts = luabind::globals(lua)["units"];
+	if(luabind::type(layouts) == LUA_TTABLE) {
+		for(luabind::iterator i(layouts), end; i != end; ++i) {
+			try {
+				std::string unitClass = luabind::object_cast<std::string>(i.key());
+				std::string filename = luabind::object_cast<std::string>(*i);
+				std::cout << "processUnitScripts: processing logic for " << unitClass << std::endl;										
+				lua_State* luaTemp = luaL_newstate();
+				luabind::open(luaTemp);
+				luabind::module(luaTemp) [
+					luabind::class_<Simulation>("Simulation")
+						.def("moveForwards",		&Simulation::moveForwards)
+						.def("moveBackwards",		&Simulation::moveBackwards)
+						.def("enemyCollides",		&Simulation::enemyCollides)
+						.def("inflictDamage",		&Simulation::inflictDamage)
+						.def("getUnitData",			&Simulation::getUnitData)
+						.def("requestAnimation",	&Simulation::requestAnimation),
+					luabind::def("registerEvents", &LogicProcessor::registerEvents)
+				];
+
+				LogicProcessor::clearHandlers();
+
+				if(luaL_dofile(luaTemp, filename.c_str()) != 0) {
+					std::cerr << lua_tostring(luaTemp, -1) << std::endl;
+					lua_pop(luaTemp, 1);										
+				}	
+				else {
+					unitTypes[unitClass] = LogicProcessor::getHandlers();
+				}
+				lua_close(luaTemp);				
+			}
+			catch(luabind::cast_failed e) {
+				std::cerr << "processUnitScripts: invalid unit data, expected a string!" << std::endl;				
+			}
+		}
+		LogicProcessor::clearHandlers();
+	}
+	else std::cerr << "processUnitScripts: invalid unit data, expected a table!" << std::endl;
+}
+
+void Application::readKeyBindings() {
+	luabind::object layouts = luabind::globals(lua)["bindings"];
+	if(luabind::type(layouts) == LUA_TTABLE) {
+		for(luabind::iterator i(layouts), end; i != end; ++i) {
+			try {
+				std::string action = luabind::object_cast<std::string>(i.key());
+				std::string key = luabind::object_cast<std::string>(*i);
+				std::map<std::string, Action>::iterator itA = actionNames.find(action);
+				if(itA == actionNames.end()) {
+					std::cerr << "readKeyBindings: invalid action name: " << action << std::endl;
+					continue;
+				}
+				
+				std::map<std::string, OIS::KeyCode>::iterator itK = keyNames.find(key);
+				if(itK == keyNames.end()) {
+					std::cerr << "readKeyBindings: invalid key name: " << key << std::endl;
+					continue;
+				}
+
+				listener->bindKey(itK->second, itA->second);
+				std::cout << "readKeyBindings: adding key binding " << action << " -> " << key << std::endl;
+			}
+			catch(luabind::cast_failed e) {
+				std::cerr << "readKeyBindings: invalid key, expected a string!" << std::endl;				
+			}
+		}
+	}
+	else std::cerr << "readKeyBindings: invalid key bindings, expected a table!" << std::endl;				
+}
+
+void Application::readLayouts() {
+	luabind::object layouts = luabind::globals(lua)["layouts"];
+	if(luabind::type(layouts) == LUA_TTABLE) {
+		for(luabind::iterator i(layouts), end; i != end; ++i) {
+			try {
+				std::string key = luabind::object_cast<std::string>(i.key());				
+				luabind::object descr = *i;
+				if(luabind::type(descr) == LUA_TTABLE) {
+					parseOneLayout(key, descr);
+				}
+				else std::cerr << "readLayouts: invalid layout definition: " << key << std::endl;
+			}
+			catch(luabind::cast_failed e) {
+				std::cerr << "readLayouts: invalid key, expected a string!" << std::endl;				
+			}
+		}
+	}
+	else std::cerr << "readLayouts: invalid layout descriptions, expected a table!" << std::endl;
+}
+
+void Application::parseOneLayout(std::string name, luabind::object& descr) {
+	try {
+		std::string unitName = luabind::object_cast<std::string>(descr["unit"]);
+		luabind::object layout = descr["layout"];
+		if(luabind::type(layout) == LUA_TTABLE) {
+			try {
+				std::string topRow = luabind::object_cast<std::string>(layout[1]);
+				std::string bottomRow = luabind::object_cast<std::string>(layout[2]);
+				std::cout << "Adding " << name << " as " << topRow << ", " << bottomRow << std::endl;
+				layoutFinder->addLayout(name, std::pair<std::string, std::string>(topRow, bottomRow));
+			}
+			catch(luabind::cast_failed e) {
+				std::cerr << "parseOneLayout: invalid key, expected a string!" << std::endl;				
+			}
+		}
+		else std::cerr << "Error: invalid layout description for " << name << std::endl;				
+	}
+	catch(luabind::cast_failed e) {
+		std::cerr << "Error: invalid layout description for " << name << std::endl;				
+	}
 }
 
 void Application::loadResources() {
@@ -63,191 +275,29 @@ void Application::loadResources() {
 	Ogre::ResourceGroupManager::getSingleton().initialiseAllResourceGroups();
 }
 
-bool Application::initGUI() {
-	renderer = &CEGUI::OgreRenderer::bootstrapSystem();
-
-	CEGUI::Imageset::setDefaultResourceGroup("Imagesets");
-	CEGUI::Font::setDefaultResourceGroup("Fonts");
-	CEGUI::Scheme::setDefaultResourceGroup("Schemes");
-	CEGUI::WidgetLookManager::setDefaultResourceGroup("LookNFeel");
-	CEGUI::WindowManager::setDefaultResourceGroup("Layouts");
-
-	CEGUI::SchemeManager::getSingleton().create("WindowsLook.scheme");
-	CEGUI::System::getSingleton().setDefaultMouseCursor("WindowsLook", "MouseArrow");
-	CEGUI::Window* sheet = CEGUI::WindowManager::getSingleton().createWindow("DefaultWindow", "_MasterRoot");
-	CEGUI::System::getSingleton().setGUISheet(sheet);
-
-	CEGUI::ImagesetManager::getSingleton().create("blocks.imageset");
-	board->randomize();
-	board2->randomize();
-
-	boardWidget = new PuzzleBoardWidget(board);
-	sheet->addChildWindow(boardWidget->getWindow());
-	boardWidget->getWindow()->setPosition(CEGUI::UVector2(CEGUI::UDim(0.0, 0), CEGUI::UDim(0.0, 0)));
-
-	boardWidget2 = new PuzzleBoardWidget(board2);
-	sheet->addChildWindow(boardWidget2->getWindow());
-	CEGUI::UDim posX = CEGUI::UDim(1.0, 0) - boardWidget2->getWindow()->getWidth();
-	CEGUI::UDim posY = CEGUI::UDim(1.0, 0) - boardWidget2->getWindow()->getHeight();
-	boardWidget2->getWindow()->setPosition(CEGUI::UVector2(posX, posY));
-
-	return true;
-}
-
 bool Application::startup() {
 	if(!root)
 		root = new Ogre::Root("plugins_d.cfg");
 	if(!root->showConfigDialog())
 		return false;
-	Ogre::RenderWindow* window = root->initialise(true, "Uber Siege");
+	window = root->initialise(true, "Uber Siege");
 	sceneManager = root->createSceneManager(Ogre::ST_GENERIC);
 
 	camera = sceneManager->createCamera("Camera");
-	camera->setPosition(Ogre::Vector3(0, 0, 500));
-	camera->lookAt(Ogre::Vector3(0, 0, 0));
-	camera->setNearClipDistance(0.1);
-	camera->setFarClipDistance(50000);
-
 	Ogre::Viewport* viewport = window->addViewport(camera);
 	viewport->setBackgroundColour(Ogre::ColourValue(0.0, 0.0, 0.0));
 	camera->setAspectRatio(Ogre::Real(viewport->getActualWidth() / viewport->getActualHeight()));
 
 	loadResources();
-	initGUI();
 
-	createScene();
+	renderer = &CEGUI::OgreRenderer::bootstrapSystem();
 
-	listener = new InputFrameListener(this, window);
+	listener = new InputFrameListener(this);
 	root->addFrameListener(listener);
 
+	processConfig();
+
 	return true;
-}
-
-void Application::getTerrainImage(bool flipX, bool flipY, Ogre::Image& img) {
-    img.load("terrain1_heightmap513.png", Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME);
-    if(flipX)
-		img.flipAroundY();
-    if(flipY)
-        img.flipAroundX();
-}
-
-void Application::defineTerrain(long x, long y) {
-	Ogre::String filename = mTerrainGroup->generateFilename(x, y);
-	if (Ogre::ResourceGroupManager::getSingleton().resourceExists(mTerrainGroup->getResourceGroup(), filename))
-		mTerrainGroup->defineTerrain(x, y);
-	else {
-		Ogre::Image img;
-		getTerrainImage(x % 2 != 0, y % 2 != 0, img);
-		mTerrainGroup->defineTerrain(x, y, &img);
-		mTerrainsImported = true;
-	}
-}
-
-void Application::configureTerrainDefaults(Ogre::Light* light) {
-	// Configure global
-	mTerrainGlobals->setMaxPixelError(8);
-	// testing composite map
-	mTerrainGlobals->setCompositeMapDistance(3000);
- 
-	// Important to set these so that the terrain knows what to use for derived (non-realtime) data
-	mTerrainGlobals->setLightMapDirection(light->getDerivedDirection());
-	mTerrainGlobals->setCompositeMapAmbient(sceneManager->getAmbientLight());
-	mTerrainGlobals->setCompositeMapDiffuse(light->getDiffuseColour());
- 
-	// Configure default import settings for if we use imported image
-	Ogre::Terrain::ImportData& defaultimp = mTerrainGroup->getDefaultImportSettings();
-	defaultimp.terrainSize = 513;
-	defaultimp.worldSize = 10000.0f;
-	defaultimp.inputScale = 300;
-	defaultimp.minBatchSize = 33;
-	defaultimp.maxBatchSize = 65;
-	// textures
-	defaultimp.layerList.resize(3);
-	defaultimp.layerList[0].worldSize = 100;
-	defaultimp.layerList[0].textureNames.push_back("dirt_grayrocky_diffusespecular.dds");
-	defaultimp.layerList[0].textureNames.push_back("dirt_grayrocky_normalheight.dds");
-	defaultimp.layerList[1].worldSize = 30;
-	defaultimp.layerList[1].textureNames.push_back("grass_green-01_diffusespecular.dds");
-	defaultimp.layerList[1].textureNames.push_back("grass_green-01_normalheight.dds");
-	defaultimp.layerList[2].worldSize = 200;
-	defaultimp.layerList[2].textureNames.push_back("growth_weirdfungus-03_diffusespecular.dds");
-	defaultimp.layerList[2].textureNames.push_back("growth_weirdfungus-03_normalheight.dds");
-}
-
-void Application::initBlendMaps(Ogre::Terrain* terrain) {
-	Ogre::TerrainLayerBlendMap* blendMap0 = terrain->getLayerBlendMap(1);
-	Ogre::TerrainLayerBlendMap* blendMap1 = terrain->getLayerBlendMap(2);
-	Ogre::Real minHeight0 = 70;
-	Ogre::Real fadeDist0 = 40;
-	Ogre::Real minHeight1 = 70;
-	Ogre::Real fadeDist1 = 15;
-	float* pBlend1 = blendMap1->getBlendPointer();
-	for (Ogre::uint16 y = 0; y < terrain->getLayerBlendMapSize(); ++y) {
-		for (Ogre::uint16 x = 0; x < terrain->getLayerBlendMapSize(); ++x) {
-			Ogre::Real tx, ty;
- 
-			blendMap0->convertImageToTerrainSpace(x, y, &tx, &ty);
-			Ogre::Real height = terrain->getHeightAtTerrainPosition(tx, ty);
-			Ogre::Real val = (height - minHeight0) / fadeDist0;
-			val = Ogre::Math::Clamp(val, (Ogre::Real)0, (Ogre::Real)1);
- 
-			val = (height - minHeight1) / fadeDist1;
-			val = Ogre::Math::Clamp(val, (Ogre::Real)0, (Ogre::Real)1);
-			*pBlend1++ = val;
-		}
-	}
-	blendMap0->dirty();
-	blendMap1->dirty();
-	blendMap0->update();
-	blendMap1->update();
-}
-
-void Application::createScene() {
-	cameraNode = sceneManager->getRootSceneNode()->createChildSceneNode();
-	//cameraNode->setPosition(0, 1610, 7760);
-	cameraNode->setPosition(160, 580, -440);
-	cameraNode->yaw(Ogre::Radian(-0.36));
-	cameraNode->attachObject(camera);
-
-	Ogre::Entity* ent = sceneManager->createEntity("Icosphere.mesh");
-	Ogre::SceneNode* unitNode = sceneManager->getRootSceneNode()->createChildSceneNode();
-	unitNode->attachObject(ent);
-	unitNode->setPosition(-5, 580, 0);	
-	unitNode->yaw(Ogre::Radian(2.3));
-	cameraNode = unitNode;
-
-	mTerrainGlobals = new Ogre::TerrainGlobalOptions(); 
-	mTerrainGroup = new Ogre::TerrainGroup(sceneManager, Ogre::Terrain::ALIGN_X_Z, 513, 10000.0f);
-	mTerrainGroup->setFilenameConvention(Ogre::String("UberSiegeTerrain"), Ogre::String("dat"));
-	mTerrainGroup->setOrigin(Ogre::Vector3::ZERO);
-
-	Ogre::Vector3 lightdir(0.55, -0.3, 0.75);
-	lightdir.normalise();
- 
-	Ogre::Light* light = sceneManager->createLight("tstLight");
-	light->setType(Ogre::Light::LT_DIRECTIONAL);
-	light->setDirection(lightdir);
-	light->setDiffuseColour(Ogre::ColourValue::White);
-	light->setSpecularColour(Ogre::ColourValue(0.4, 0.4, 0.4));
- 
-	sceneManager->setAmbientLight(Ogre::ColourValue(0.2, 0.2, 0.2));
-	configureTerrainDefaults(light);
-
-	for(long x = 0; x <= 0; ++x)
-		for(long y = 0; y <= 0; ++y)
-			defineTerrain(x, y);
- 
-	mTerrainGroup->loadAllTerrains(true);
-	if(mTerrainsImported) {
-		Ogre::TerrainGroup::TerrainIterator ti = mTerrainGroup->getTerrainIterator();
-		while(ti.hasMoreElements()) {
-			Ogre::Terrain* t = ti.getNext()->instance;
-			initBlendMaps(t);
-		}
-	}
-
-	mTerrainGroup->freeTemporaryResources();
-	sceneManager->setSkyDome(true, "CloudySky", 5, 8);
 }
 
 void Application::renderFrame() {
