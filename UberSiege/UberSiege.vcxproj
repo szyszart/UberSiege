@@ -37,10 +37,10 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>D:\CEGUI\cegui\include;D:\OgreSDK\boost_1_42;D:\OgreSDK\include;D:\OgreSDK\include\OGRE;$(IncludePath)</IncludePath>
+    <IncludePath>D:\luabind-0.9.1\;D:\lua\include;D:\CEGUI\cegui\include;C:\Users\Szyszler\Downloads\boost_1_46_1\boost_1_46_1;D:\OgreSDK\include;D:\OgreSDK\include\OGRE;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LibraryPath>D:\CEGUI\lib;D:\OgreSDK\lib\debug;D:\OgreSDK\boost_1_42\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>C:\Users\Szyszler\Downloads\boost_1_46_1\boost_1_46_1\stage\lib;D:\lua;D:\luabind-0.9.1\stage;D:\CEGUI\lib;D:\OgreSDK\lib\debug;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -50,7 +50,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>OgreMain_d.lib;OIS_d.lib;CEGUIBase_d.lib;CEGUIOgreRenderer_d.lib;OgreTerrain_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>luabindd.lib;lua51.lib;OgreMain_d.lib;OIS_d.lib;CEGUIBase_d.lib;CEGUIOgreRenderer_d.lib;OgreTerrain_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -70,12 +70,18 @@
     <ClCompile Include="Application.cpp" />
     <ClCompile Include="InputFrameListener.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Mappings.cpp" />
     <ClCompile Include="PuzzleBoard.cpp" />
+    <ClCompile Include="Simulation.cpp" />
+    <ClCompile Include="Terrain.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.h" />
     <ClInclude Include="InputFrameListener.h" />
+    <ClInclude Include="Mapinfo.h" />
     <ClInclude Include="PuzzleBoard.h" />
+    <ClInclude Include="Simulation.h" />
+    <ClInclude Include="Terrain.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

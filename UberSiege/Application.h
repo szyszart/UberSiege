@@ -6,10 +6,20 @@
 #include "OGRE/Terrain/OgreTerrain.h"
 #include "OGRE/Terrain/OgreTerrainGroup.h"
 #include "RendererModules/Ogre/CEGUIOgreRenderer.h"
-#include "OGRE\OgrePrerequisites.h"
+#include "OGRE/OgrePrerequisites.h"
+
+#include "lua.hpp"
+#include <luabind/luabind.hpp>
+#include <luabind/iterator_policy.hpp>
+
+#include <map>
 
 #include "InputFrameListener.h"
 #include "PuzzleBoard.h"
+#include "Mapinfo.h"
+
+typedef std::map<std::string, luabind::object> UnitHandlers;
+typedef std::map<std::string, UnitHandlers> UnitTypes;
 
 class Application {
 public:
@@ -18,42 +28,38 @@ public:
 
 	virtual void loadResources();
 	virtual bool startup();
-	virtual void createScene();
 	virtual bool isRunning() { return running; }
 	virtual void go();
-	virtual bool initGUI();
 
-	PuzzleBoardWidget* getBoardWidget() { return boardWidget; }
-	PuzzleBoardWidget* getBoardWidget2() { return boardWidget2; }
 	BoardLayoutFinder* getLayoutFinder() { return layoutFinder; }
-	PuzzleBoard* getBoard() { return board; }
-	PuzzleBoard* getBoard2() { return board2; }
-	Ogre::SceneNode* getCameraNode() { return cameraNode; }
-private:
-	void renderFrame();	
-	void defineTerrain(long x, long y);
-	void getTerrainImage(bool flipX, bool flipY, Ogre::Image& img);
-	void initBlendMaps(Ogre::Terrain* terrain);
-	void configureTerrainDefaults(Ogre::Light* light);
+	Ogre::Camera* getCamera() { return camera; }
+	Ogre::RenderWindow* getRenderWindow() { return window; }
+	CEGUI::OgreRenderer* getGUIRenderer() { return renderer; }
+	Ogre::SceneManager* getSceneManager() { return sceneManager; }
+	bool loadMap(std::string name, MapInfo& info);
 
+	static std::map<std::string, OIS::KeyCode> keyNames;
+	static std::map<std::string, Action> actionNames;
+private:
+	void renderFrame();
+	void processConfig();
+	void processUnitScripts();
+
+	void readKeyBindings();
+	void readLayouts();
+	void parseOneLayout(std::string name, luabind::object&);	
+
+	Ogre::RenderWindow* window;
 	Ogre::SceneManager* sceneManager;
 	Ogre::Root* root;
 	Ogre::Camera* camera;
-	Ogre::SceneNode* cameraNode;
-	InputFrameListener* listener;
 	CEGUI::OgreRenderer* renderer;
-	bool running;
+	InputFrameListener* listener;
+	lua_State* lua;
+	bool running;	
 
-	Ogre::TerrainGlobalOptions* mTerrainGlobals;
-	Ogre::TerrainGroup* mTerrainGroup;
-	bool mTerrainsImported;	
-
-	// TODO: przenieœæ to w inne miejsce
-	PuzzleBoard* board;
-	PuzzleBoard* board2;
-	PuzzleBoardWidget* boardWidget;
-	PuzzleBoardWidget* boardWidget2;
 	BoardLayoutFinder* layoutFinder;
+	UnitTypes unitTypes;
 };
 
 #endif

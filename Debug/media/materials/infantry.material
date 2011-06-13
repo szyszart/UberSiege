@@ -14,22 +14,6 @@ material _missing_material_
     }
 }
 
-material Material 
-{
-	receive_shadows on
-	technique
-	{
-		pass
-		{
-			cull_hardware none
-			ambient 0.800000011920929 0.800000011920929 0.800000011920929 1.0
-			diffuse 0.6400000190734865 0.6400000190734865 0.6400000190734865 1.0
-			specular 0.5 0.5 0.5 1.0 12.5
-			emissive 0.0 0.0 0.0 1.0
-			scene_blend one zero
-		}
-	}
-}
 material Jolts 
 {
 	receive_shadows on
@@ -168,6 +152,54 @@ material Zeby
 			cull_hardware none
 			ambient 1.0 1.0 1.0 1.0
 			diffuse 0.800000011920929 0.800000011920929 0.800000011920929 1.0
+			specular 0.5 0.5 0.5 1.0 12.5
+			emissive 0.0 0.0 0.0 1.0
+			scene_blend one zero
+		}
+	}
+}
+material Sw_pommel 
+{
+	receive_shadows on
+	technique
+	{
+		pass
+		{
+			cull_hardware none
+			ambient 0.800000011920929 0.800000011920929 0.800000011920929 1.0
+			diffuse 0.6400000190734865 0.6400000190734865 0.6400000190734865 1.0
+			specular 0.7051281929016113 0.7051281929016113 0.7051281929016113 1.0 12.5
+			emissive 0.0 0.0 0.0 1.0
+			scene_blend one zero
+		}
+	}
+}
+material Sw_hilt 
+{
+	receive_shadows on
+	technique
+	{
+		pass
+		{
+			cull_hardware none
+			ambient 0.11068471521139145 0.04089127853512764 0.0 1.0
+			diffuse 0.08854777348857779 0.03271302331556414 0.0 1.0
+			specular 0.0 0.0 0.0 1.0 12.5
+			emissive 0.0 0.0 0.0 1.0
+			scene_blend one zero
+		}
+	}
+}
+material Sw_hilt_iron 
+{
+	receive_shadows on
+	technique
+	{
+		pass
+		{
+			cull_hardware none
+			ambient 0.033100634813308716 0.033100634813308716 0.033100634813308716 1.0
+			diffuse 0.02648050824523729 0.02648050824523729 0.02648050824523729 1.0
 			specular 0.5 0.5 0.5 1.0 12.5
 			emissive 0.0 0.0 0.0 1.0
 			scene_blend one zero
