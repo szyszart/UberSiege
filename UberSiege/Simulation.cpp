@@ -13,22 +13,33 @@ Player::~Player() {
 	delete board;
 }
 
-bool Unit::addAnimation(string name) {
+Ogre::AnimationState* Unit::fetchAnimation(string name) {
 	map<string, Ogre::AnimationState*>::iterator it = anims.find(name);
+	/*
+	std::cout << "Animation list" << std::endl;
+	Ogre::AnimationStateSet* set = entity->getAllAnimationStates();
+	Ogre::AnimationStateIterator iter = set->getAnimationStateIterator();
+	while(iter.hasMoreElements())
+		std::cout << iter.getNext()->getAnimationName() << std::endl;
+	
+	*/
+	Ogre::AnimationState* anim = NULL;
 	if(it == anims.end()) {		
-		std::cout << "Animation list" << std::endl;
-		Ogre::AnimationStateSet* set = entity->getAllAnimationStates();
-		Ogre::AnimationStateIterator iter = set->getAnimationStateIterator();
-		while(iter.hasMoreElements())
-			std::cout << iter.getNext()->getAnimationName() << std::endl;
-
-		Ogre::AnimationState* anim = entity->getAnimationState(name);
+		anim = entity->getAnimationState(name);
 		if(!anim)
-			return false;
+			return NULL;
 		anim->setEnabled(true);
+		anim->setTimePosition(0.0);
 		anim->setLoop(false);
-		anims[name] = anim;
 	}
+	return anim;
+}
+
+bool Unit::addAnimation(string name) {
+	Ogre::AnimationState* anim = fetchAnimation(name);
+	if(!anim)
+		return false;
+	anims[name] = anim;
 	return true;
 }
 
@@ -96,6 +107,10 @@ void Simulation::inflictDamage(Unit* unit, Unit* enemy, unsigned int damage) {
 
 bool Simulation::requestAnimation(Unit* unit, string animName) {
 	return unit->addAnimation(animName);
+}
+
+void Simulation::queueAnimation(Unit* unit, std::string animName) {
+	unit->enqueueAnimation(animName);
 }
 
 void Simulation::stopAnimations(Unit* unit) {
@@ -276,30 +291,39 @@ void Simulation::tick(float timeElapsed) {
 	while(it != units.end()) {
 		Unit* u = *it;
 		callHandler(u, "Tick");
-		if(u->isDead()) {
-			callHandler(u, "Die");
-			removeUnit(it++);
-		}
-		else if(isInSpawnZone(u)) {
-			callHandler(u, "Leave");
-			removeUnit(it++);
-		}		
-		else {
-			// oblicz nowe po³o¿enie jednostki
-			double oldPos = u->getPos();
-			double newPos = oldPos + u->getVel() * timeElapsed;			
-			u->setPos(newPos);
-			// sprawdŸ, czy wyst¹pi kolizja
-			if(!collisions(u) && inBounds(u)) {
-				Ogre::SceneNode* node = u->getSceneNode();
-				if(node) {				
-					node->setPosition(info.pathStart + path * u->getPos());
-					u->advanceAnimations(timeElapsed);
-				}
+		if(!u->isActive()) {
+			if(!u->hasQueuedAnimations()) {
+				removeUnit(it++);
+				continue;
 			}
-			else u->setPos(oldPos);
-			++it;
+			else u->advanceAnimations(timeElapsed);
 		}
+		else {
+			if(u->isDead()) {			
+				callHandler(u, "Die");
+				u->setActive(false);
+			}
+			else if(isInSpawnZone(u)) {
+				callHandler(u, "Leave");
+				u->setActive(false);
+			}		
+			else {
+				// oblicz nowe po³o¿enie jednostki
+				double oldPos = u->getPos();
+				double newPos = oldPos + u->getVel() * timeElapsed;			
+				u->setPos(newPos);
+				// sprawdŸ, czy wyst¹pi kolizja
+				if(!collisions(u) && inBounds(u)) {
+					Ogre::SceneNode* node = u->getSceneNode();
+					if(node) {				
+						node->setPosition(info.pathStart + path * u->getPos());
+						u->advanceAnimations(timeElapsed);
+					}
+				}
+				else u->setPos(oldPos);
+			}	
+		}
+		++it;
 	}
 }
 
