@@ -28,6 +28,9 @@ Icon?
 *.pch
 *.vspscc
 *.vssscc
+*.vcxproj
+*.vcxproj.filters
+*.manifest
 *_i.c
 *_p.c
 *.ncb

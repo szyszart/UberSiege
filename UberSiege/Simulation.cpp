@@ -1,13 +1,39 @@
 #include "Simulation.h"
 #include "Application.h"
+using namespace std;
 
-Player::Player(std::string name) {
+const double Simulation::SPAWN_ZONE_WIDTH = 0.1;
+
+Player::Player(string name) {
 	this->name = name;
 	board = new PuzzleBoard();
 }
 
 Player::~Player() {
 	delete board;
+}
+
+bool Unit::addAnimation(string name) {
+	map<string, Ogre::AnimationState*>::iterator it = anims.find(name);
+	if(it == anims.end()) {		
+		std::cout << "Animation list" << std::endl;
+		Ogre::AnimationStateSet* set = entity->getAllAnimationStates();
+		Ogre::AnimationStateIterator iter = set->getAnimationStateIterator();
+		while(iter.hasMoreElements())
+			std::cout << iter.getNext()->getAnimationName() << std::endl;
+
+		Ogre::AnimationState* anim = entity->getAnimationState(name);
+		if(!anim)
+			return false;
+		anim->setEnabled(true);
+		anim->setLoop(false);
+		anims[name] = anim;
+	}
+	return true;
+}
+
+void Unit::clearAnimations() {
+	anims.clear();
 }
 
 Simulation::Simulation(Application* app) {
@@ -22,25 +48,58 @@ Simulation::~Simulation() {
 	delete loader;
 }
 
-void Simulation::moveForwards(Unit* unit) {
+list<Unit*> Simulation::getEnemies(Unit* unit) {
+	list<Unit*> result;
+	for(list<Unit*>::iterator it = units.begin(); it != units.end(); ++it) {
+		Unit* u = *it;
+		if(unit->getPlayer() != u->getPlayer())
+			result.push_back(u);
+	}
+	return result;
 }
 
-void Simulation::moveBackwards(Unit* unit) {
+void Simulation::moveForwards(Unit* unit, double vel) {
+	unit->setVel(unit->getDirection() * abs(vel));	
 }
 
-UnitHandle Simulation::enemyCollides(Unit* unit) {
-	return -1;
+void Simulation::moveBackwards(Unit* unit, double vel) {
+	unit->setVel(-unit->getDirection() * abs(vel));
 }
 
-void Simulation::inflictDamage(Unit* unit, UnitHandle enemy, unsigned int damage) {
+Unit* Simulation::getNearestEnemy(Unit* unit) {
+	double maxDist = 1.0;
+	Unit* found = NULL;
+	for(list<Unit*>::iterator it = units.begin(); it != units.end(); ++it) {
+		Unit* u = *it;
+		double dist = abs(unit->getPos() - u->getPos());
+		if((unit->getPlayer() != u->getPlayer()) && (dist <= maxDist)) {
+			found = u;
+			maxDist = dist;
+		}
+	}	
+	return found;
 }
 
-UnitData Simulation::getUnitData(UnitHandle u) {
-	UnitData r;
-	return r;
+luabind::object Simulation::getEnemiesLua(lua_State* lua, Unit* unit) {
+	luabind::object result = luabind::newtable(lua);  
+    list<Unit*> enemies = getEnemies(unit);
+    int index = 1;
+	for(list<Unit*>::iterator it = enemies.begin(); it != enemies.end(); ++it) {
+		result[index++] = *it;
+	}	
+    return result;
 }
 
-void Simulation::requestAnimation(Unit* unit, std::string animName) {
+void Simulation::inflictDamage(Unit* unit, Unit* enemy, unsigned int damage) {
+	enemy->setHP(enemy->getHP() - damage);
+}
+
+bool Simulation::requestAnimation(Unit* unit, string animName) {
+	return unit->addAnimation(animName);
+}
+
+void Simulation::stopAnimations(Unit* unit) {
+	unit->clearAnimations();
 }
 
 bool Simulation::loadMap(MapInfo& info) {
@@ -58,7 +117,7 @@ bool Simulation::loadMap(MapInfo& info) {
 
 	loader->loadTerrain(info.heightMap);
 	castleNode = NULL;
-	for(std::vector<MountPoint>::iterator it = info.mountPoints.begin(); it != info.mountPoints.end(); ++it) {
+	for(vector<MountPoint>::iterator it = info.mountPoints.begin(); it != info.mountPoints.end(); ++it) {
 		Ogre::Entity* ent = sceneManager->createEntity("ZamekMesh.mesh");		
 		Ogre::SceneNode* node = sceneManager->getRootSceneNode()->createChildSceneNode();
 		if(!castleNode)
@@ -68,43 +127,45 @@ bool Simulation::loadMap(MapInfo& info) {
 		node->setScale(it->scale);
 		node->yaw(Ogre::Radian(it->rot));
 	}
-
-	Ogre::Vector3 path = info.pathEnd - info.pathStart;
-	// DEBUG: dodaj ¿o³nierzyka po obu stronach
-
-	Ogre::Vector3 pathNorm = path;
-	pathNorm.normalise();
-	Ogre::Radian angle = path.angleBetween(Ogre::Vector3::UNIT_Z);
-
-	Ogre::Entity* ent = sceneManager->createEntity("archer.mesh");
-	animState = ent->getAnimationState("Act: Walk_lower");
-	animState->setEnabled(true);
-	animState->setLoop(true);
-
-	animState2 = ent->getAnimationState("Act: Walk_upper");
-	animState2->setEnabled(true);
-	animState2->setLoop(true);	
-	Ogre::SceneNode* node = sceneManager->getRootSceneNode()->createChildSceneNode();
-	node->attachObject(ent);
-	node->setPosition(info.pathStart);	
-	node->yaw(angle);
-	castleNode = node;
-
-	ent = sceneManager->createEntity("archer.mesh");
-	std::cout << "Animation list" << std::endl;
-	Ogre::AnimationStateSet* set = ent->getAllAnimationStates();
-	Ogre::AnimationStateIterator iter = set->getAnimationStateIterator();
-	while(iter.hasMoreElements())
-		std::cout << iter.getNext()->getAnimationName() << std::endl;
-
-	node = sceneManager->getRootSceneNode()->createChildSceneNode();
-	node->attachObject(ent);
-	node->setPosition(info.pathStart + path);	
-	node->yaw(angle - Ogre::Degree(180.0));
-
+	
+	path = info.pathEnd - info.pathStart;
 	this->info = info;
-
 	return true;
+}
+
+void Simulation::addUnit(Player* player, std::string className) {
+	// TODO: dodaj odczyt pocz¹tkowych wartoœci HP
+	Unit* unit = new Unit(player, className, 100);
+	// TODO: nazwa pliku .mesh odczytywana z pliku konfiguracyjnego!
+	unit->setDirection(player->getDirection());
+	Ogre::Entity* ent = sceneManager->createEntity("infantry.mesh");
+	unit->setEntity(ent);	
+	unit->setPos(player->getSpawnZone().start);
+	player->enqueueUnit(unit);
+}
+
+bool Simulation::addUnit(Unit* unit) {	
+	if(!unit->getEntity())
+		return false;
+
+	Ogre::SceneNode* node = sceneManager->getRootSceneNode()->createChildSceneNode();
+	node->attachObject(unit->getEntity());
+	node->yaw(Ogre::Radian(unit->getPlayer()->getYaw()));
+	unit->setSceneNode(node);	
+	units.push_back(unit);
+	return true;
+}
+
+void Simulation::removeUnit(list<Unit*>::iterator it) {
+	Unit* u = *it;
+	Ogre::SceneNode* node = u->getSceneNode();
+	if(node) {
+		node->removeAndDestroyAllChildren();		
+		Ogre::SceneNode* parent = node->getParentSceneNode();
+		parent->removeAndDestroyChild(node->getName());
+	}
+	units.erase(it);
+	delete u;
 }
 
 void Simulation::createScene() {
@@ -122,45 +183,137 @@ void Simulation::createScene() {
 	sceneManager->setSkyDome(true, "CloudySky", 5, 8);	
 }
 
-void Simulation::setPlayersCount(unsigned int n) {
-	maxNumPlayers = n;
-}
-
-unsigned int Simulation::getPlayersCount() {
-	return maxNumPlayers;
-}
-
 Player* Simulation::getPlayer(unsigned int num) {	
-	return (num < maxNumPlayers) ? players[num] : NULL;
+	return players[num];
 }
 
 bool Simulation::addPlayer(Player* player) {	
-	if(players.size() >= maxNumPlayers)
+	if(players.size() >= 2)
 		return false;
+	
+	Zone spawnZone;
+	Ogre::Radian angle;
+	switch(players.size()) {
+		case 0:		
+			spawnZone.start = 0.0;
+			spawnZone.end = SPAWN_ZONE_WIDTH;
+			angle = path.angleBetween(Ogre::Vector3::UNIT_Z);
+			player->setDirection(1.0);
+			break;
+		case 1:
+			spawnZone.start = 1.0 - SPAWN_ZONE_WIDTH;
+			spawnZone.end = 1.0;
+			angle = path.angleBetween(Ogre::Vector3::UNIT_Z) - Ogre::Degree(180.0);
+			player->setDirection(-1.0);
+			break;
+	};
+	player->setSpawnZone(spawnZone);
+	player->setYaw(angle.valueRadians());
 	players.push_back(player);
 	return true;
 }
 
+bool Simulation::collisions(Unit* unit) {
+	for(list<Unit*>::iterator it = units.begin(); it != units.end(); ++it) {
+		Unit* u = *it;
+		if(u == unit)
+			continue;
+		if(collide(u, unit))
+			return true;
+	}
+	return false;
+}
+
+bool Simulation::collide(Unit* u1, Unit *u2) {
+	double pos1 = (path * u1->getPos()).length();
+	double pos2 = (path * u2->getPos()).length();
+	double w1 = u1->getWidth() / 2;
+	double w2 = u2->getWidth() / 2;
+	return (((pos2 - w2 >= pos1 - w1) && (pos2 - w2 <= pos1 + w1))
+		|| ((pos2 + w2 >= pos1 - w1) && (pos2 + w2 <= pos1 + w1)));
+}
+
+bool Simulation::inBounds(Unit* unit) {
+	double pos = unit->getPos();
+	return (pos >= 0.0 && pos <= 1.0);
+}
+
+bool Simulation::isZoneEmpty(Zone z) {
+	// TODO: wydajniej, na bie¿¹co uaktualniaj informacje o jednostkach wchodz¹cych do strefy
+	for(list<Unit*>::iterator it = units.begin(); it != units.end(); ++it) {
+		Unit* u = *it;
+		if((u->getPos() >= z.start) && (u->getPos() <= z.end))
+			return false;
+	}
+	return true;
+}
+
+bool Simulation::isInSpawnZone(Unit* u) {
+	for(vector<Player*>::iterator it = players.begin(); it != players.end(); ++it) {
+		Player* p = *it;
+		if(p == u->getPlayer())
+			continue;
+		Zone z = p->getSpawnZone();
+		if((u->getPos() >= z.start) && (u->getPos() <= z.end))
+			return true;
+	}
+}
+
 void Simulation::tick(float timeElapsed) {
-	/*
-		for each active unit u
-			unitTick(u)
+	for(vector<Player*>::iterator it = players.begin(); it != players.end(); ++it) {
+		Player* p = *it;
+		if(p->hasWaitingUnits()) {
+			Zone spawnZone = p->getSpawnZone();
+			if(isZoneEmpty(spawnZone)) {
+				Unit* u = p->dequeueUnit();
+				addUnit(u);
+				callHandler(u, "Init");
+			}
+		}
+	}
+	
+	list<Unit*>::iterator it = units.begin();
+	while(it != units.end()) {
+		Unit* u = *it;
+		callHandler(u, "Tick");
+		if(u->isDead()) {
+			callHandler(u, "Die");
+			removeUnit(it++);
+		}
+		else if(isInSpawnZone(u)) {
+			callHandler(u, "Leave");
+			removeUnit(it++);
+		}		
+		else {
+			// oblicz nowe po³o¿enie jednostki
+			double oldPos = u->getPos();
+			double newPos = oldPos + u->getVel() * timeElapsed;			
+			u->setPos(newPos);
+			// sprawdŸ, czy wyst¹pi kolizja
+			if(!collisions(u) && inBounds(u)) {
+				Ogre::SceneNode* node = u->getSceneNode();
+				if(node) {				
+					node->setPosition(info.pathStart + path * u->getPos());
+					u->advanceAnimations(timeElapsed);
+				}
+			}
+			else u->setPos(oldPos);
+			++it;
+		}
+	}
+}
 
-		for each player p
-			if(p.unitQueue not empty && p.spawnArea is empty)
-				u = p.unitQueue.dequeue()
-				add u to active units
-		
-
-	*/
-
-	// DIRTY: proof of concept
-	static double position = 0.0;
-	Ogre::Vector3 path = info.pathEnd - info.pathStart;	
-	position += timeElapsed * 0.1;
-	if(position > 1.0)
-		position = 0.0;
-	castleNode->setPosition(info.pathStart + position * path);
-	animState->addTime(timeElapsed);
-	animState2->addTime(timeElapsed);
+void Simulation::callHandler(Unit* u, std::string eventName) {
+	luabind::object callback;
+	if(!app->getEventHandler(u->getClassName(), eventName, callback))
+		return;
+	if(luabind::type(callback) == LUA_TFUNCTION) {
+		try {
+			luabind::call_function<void>(callback, this, u, NULL);	// TODO: przeka¿ informacje o zdarzeniu zamiast NULL
+		}		
+		catch(std::exception e) {
+			cerr << "Lua runtime exception in Simulation::callHandler " << eventName << endl;
+			cerr << e.what() << endl;
+		}
+	}	
 }
