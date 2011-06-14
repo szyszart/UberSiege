@@ -7,6 +7,14 @@
 *.o
 *.so
 
+<<<<<<< HEAD
+# Logs and databases #
+######################
+*.log
+*.tlog
+*.sql
+*.sqlite
+=======
 #OS junk files
 [Tt]humbs.db
 .DS_Store?
@@ -48,3 +56,4 @@ Ankh.NoLoad
 
 # Office Temp Files
 ~$*
+>>>>>>> upstream/master
