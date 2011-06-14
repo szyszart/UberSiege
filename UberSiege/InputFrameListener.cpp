@@ -9,7 +9,8 @@ InputFrameListener::InputFrameListener(Application* app) {
 	this->window = app->getRenderWindow();
 	isRunning = true;
 
-	// TODO: imiona graczy
+	timerValue = 60.0 * 4;
+
 	simulation = new Simulation(app);
 	MapInfo info;
 	app->loadMap("map1", info);
@@ -238,6 +239,11 @@ void InputFrameListener::initialize() {
 
 	CEGUI::SchemeManager::getSingleton().create("WindowsLook.scheme");
 	CEGUI::System::getSingleton().setDefaultMouseCursor("WindowsLook", "MouseArrow");
+
+    CEGUI::FontManager::getSingleton().create("DejaVuSans-10.font");
+    if(CEGUI::FontManager::getSingleton().isDefined("DejaVuSans-10"))
+		CEGUI::System::getSingleton().setDefaultFont("DejaVuSans-10");
+
 	CEGUI::Window* sheet = CEGUI::WindowManager::getSingleton().createWindow("DefaultWindow", "_MasterRoot");
 	CEGUI::System::getSingleton().setGUISheet(sheet);
 
@@ -250,6 +256,15 @@ void InputFrameListener::initialize() {
 	sheet->addChildWindow(boardWidget1->getWindow());
 	boardWidget1->getWindow()->setPosition(CEGUI::UVector2(CEGUI::UDim(0.0, 0), CEGUI::UDim(0.0, 0)));
 
+	statsWindow = CEGUI::WindowManager::getSingleton().createWindow("WindowsLook/StaticText", "Stats");
+	sheet->addChildWindow(statsWindow);
+	statsWindow->setVisible(true);
+	statsWindow->setPosition(CEGUI::UVector2(boardWidget1->getWindow()->getWidth(), CEGUI::UDim(0.0, 0)));
+	statsWindow->setWidth(CEGUI::UDim(0.0, 256));
+	statsWindow->setHeight(CEGUI::UDim(0.0, 100));
+	statsWindow->setProperty("HorzFormatting", "HorzCentred");
+	statsWindow->setProperty("VertFormatting", "VertCentred");
+
 	boardWidget2 = new PuzzleBoardWidget(player2->getBoard());
 	sheet->addChildWindow(boardWidget2->getWindow());
 	CEGUI::UDim posX = CEGUI::UDim(1.0, 0) - boardWidget2->getWindow()->getWidth();
@@ -257,10 +272,22 @@ void InputFrameListener::initialize() {
 	boardWidget2->getWindow()->setPosition(CEGUI::UVector2(posX, posY));
 }
 
+void InputFrameListener::refreshStats() {
+	std::ostringstream textStream;
+	int secondsLeft = (int)timerValue;
+	textStream << "Gracz 1: " << player1->getHP() << std::endl
+			   << "Gracz 2: " << player2->getHP() << std::endl << " " << std::endl
+			   << std::setfill('0') << std::setw(2) << (secondsLeft / 60) << ':' 
+			   << std::setfill('0') << std::setw(2) << (secondsLeft % 60);
+
+	statsWindow->setText(textStream.str());
+}
+
 bool InputFrameListener::frameStarted(const Ogre::FrameEvent& evt) {
 	keyboard->capture();	
 	mouse->capture();	
 
+	timerValue -= evt.timeSinceLastFrame;
 	simulation->tick(evt.timeSinceLastFrame);
 
 	Ogre::SceneNode* cameraNode = simulation->getCameraNode();
@@ -282,6 +309,8 @@ bool InputFrameListener::frameStarted(const Ogre::FrameEvent& evt) {
 	if(keyboard->isKeyDown(OIS::KC_4)) {
 		cameraNode->rotate(Ogre::Vector3::UNIT_X, Ogre::Radian(0.01),Ogre::Node::TS_WORLD);
 	}
+
+	refreshStats();
 
 	if(window->isClosed() || !isRunning)
 		return false;

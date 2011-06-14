@@ -52,8 +52,10 @@ private:
 	void processAction(Action a);
 	bool scanForLayouts(Player* p, std::vector<std::string>& layouts);
 	void spawnUnits(Player* p, std::vector<std::string>& layouts);
+	void refreshStats();
 	CEGUI::MouseButton convertButton(OIS::MouseButtonID id);
 
+	CEGUI::Window* statsWindow;
 	OIS::InputManager* inputManager;
 	OIS::Keyboard* keyboard;
 	OIS::Mouse* mouse;
@@ -64,6 +66,8 @@ private:
 	Player* player2;
 	PuzzleBoardWidget* boardWidget1;
 	PuzzleBoardWidget* boardWidget2;
+
+	double timerValue;		// liczba sekund do koñca rozgrywki
 
 	std::vector<std::string> p1Layouts;
 	std::vector<std::string> p2Layouts;
