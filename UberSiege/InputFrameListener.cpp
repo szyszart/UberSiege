@@ -165,6 +165,14 @@ bool InputFrameListener::keyPressed(const OIS::KeyEvent& evt) {
 		case OIS::KC_ESCAPE:
 			isRunning = false;
 			break;
+
+		case OIS::KC_X: // DEBUG
+			simulation->addUnit(player1, "infantry");
+			break;
+		case OIS::KC_C: // DEBUG
+			simulation->addUnit(player2, "infantry");
+			break;
+
 		default:
 			// czy wciœniêto klawisz przypisany jakiejœ akcji
 			if(it != bindings.end())
