@@ -252,3 +252,54 @@ material Bow
 		}
 	}
 }
+material Arrow_wood 
+{
+	receive_shadows on
+	technique
+	{
+		pass
+		{
+			cull_hardware none
+			ambient 0.0577998161315918 0.01075547281652689 0.0 1.0
+			diffuse 0.04623985359430094 0.00860437838143674 0.0 1.0
+			specular 0.5 0.5 0.5 1.0 12.5
+			emissive 0.0 0.0 0.0 1.0
+			scene_blend one zero
+			vray <bpy ID property from "MAArrow_wood">
+		}
+	}
+}
+material Arrow 
+{
+	receive_shadows on
+	technique
+	{
+		pass
+		{
+			cull_hardware none
+			ambient 0.800000011920929 0.0 0.0 1.0
+			diffuse 0.6400000190734865 0.0 0.0 1.0
+			specular 0.0 0.0 0.0 1.0 12.5
+			emissive 0.0 0.0 0.0 1.0
+			scene_blend one zero
+			vray <bpy ID property from "MAArrow">
+		}
+	}
+}
+material Arrow_iron 
+{
+	receive_shadows on
+	technique
+	{
+		pass
+		{
+			cull_hardware none
+			ambient 0.1574293076992035 0.1574293076992035 0.1574293076992035 1.0
+			diffuse 0.12594344803606639 0.12594344803606639 0.12594344803606639 1.0
+			specular 0.8095238208770752 0.8095238208770752 0.8095238208770752 1.0 12.5
+			emissive 0.0 0.0 0.0 1.0
+			scene_blend one zero
+			vray <bpy ID property from "MAArrow_iron">
+		}
+	}
+}
