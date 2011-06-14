@@ -14,21 +14,18 @@ function onTick(sim, unit, event)
         sim:requestAnimation(unit, 'Act: Run_lower')
         sim:moveForwards(unit, 0.1)         
     end
-        --print('fucking' + unit:getPos())
---        sim:stopAnimations(unit)
-  --      sim:requestAnimation(unit, 'Act: Attack')
-    --    sim:inflictDamage(unit, foe, 15)
-  --  else
-        --print('moving' + unit:getPos())
-      --  sim:requestAnimation(unit, 'Act: Walk_upper')
-        --sim:moveForwards(unit, 0.1)        
-    --end
+end
+
+function onDie(sim, unit, event)
+    print('onDie called')
+    sim:stopAnimations(unit)
+    sim:queueAnimation(unit, 'Act: Death')    
 end
 
 events = {
     Tick = onTick,
+    Die = onDie,
     Init = function(s, u, e) print('Init called') end,
-    Die = function(s, u, e) print('Die called') end,
     Leave = function(s, u, e) print('Leave called') end
 }
 registerEvents(events)

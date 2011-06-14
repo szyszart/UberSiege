@@ -31,6 +31,8 @@ public:
 		sceneNode = NULL;
 		pos = vel = 0.0;
 		direction = 1.0;
+		currentQueuedAnim = NULL;
+		active = true;
 	}
 	inline double const getPos() { return pos; }
 	inline void setPos(double p) { pos = p; }
@@ -58,22 +60,46 @@ public:
 	inline Ogre::Entity* getEntity() { return entity; }
 	inline void setEntity(Ogre::Entity* e) { entity = e; }
 
+	inline void setActive(bool act) { active = act; }
+	inline bool isActive() { return active; }
+
 	bool addAnimation(std::string name);
 	void clearAnimations();
 	void advanceAnimations(float timeElapsed) {
-		std::map<std::string, Ogre::AnimationState*>::iterator it = anims.begin();
-		while(it != anims.end()) {
-			Ogre::AnimationState* anim = it->second;
-			anim->addTime(timeElapsed);
-			if(anim->hasEnded())  {
-				anim->setTimePosition(0.0);
-				anims.erase(it++);
+		if(anims.empty()) {
+			// odtwórz kolejn¹ animacjê z kolejki			
+			if(currentQueuedAnim && currentQueuedAnim->hasEnded()) {
+				currentQueuedAnim->setTimePosition(0.0);
+				currentQueuedAnim = NULL;
 			}
-			else 
-				++it;		
+			if(!currentQueuedAnim) {
+				while(!animQueue.empty() && !currentQueuedAnim) {
+					currentQueuedAnim = fetchAnimation(animQueue.front());
+					animQueue.pop_front();
+				}
+			}			
+			if(currentQueuedAnim)
+				currentQueuedAnim->addTime(timeElapsed);
+		}
+		else {
+			std::map<std::string, Ogre::AnimationState*>::iterator it = anims.begin();
+			while(it != anims.end()) {
+				Ogre::AnimationState* anim = it->second;
+				anim->addTime(timeElapsed);
+				if(anim->hasEnded())  {
+					anim->setTimePosition(0.0);
+					anims.erase(it++);
+				}
+				else 
+					++it;		
+			}
 		}
 	}
+	bool hasQueuedAnimations() { return (!animQueue.empty() || !currentQueuedAnim); }	
+	void enqueueAnimation(std::string name) { animQueue.push_back(name); }
 private:
+	Ogre::AnimationState* fetchAnimation(std::string name);
+
 	std::string className;
 	int hp;
 	double pos;
@@ -81,11 +107,14 @@ private:
 	double width;	// absolute (not relative to the path)
 	double yaw;
 	double direction;
+	bool active;
 	Player* player;
 
 	Ogre::Entity* entity;
 	Ogre::SceneNode* sceneNode;
 	std::map<std::string, Ogre::AnimationState*> anims;
+	Ogre::AnimationState* currentQueuedAnim;
+	std::list<std::string> animQueue;
 };
 
 // owns Board
@@ -142,6 +171,7 @@ public:
 	luabind::object getEnemiesLua(lua_State* lua, Unit* unit);
 	void inflictDamage(Unit* unit, Unit* enemy, unsigned int damage);	
 	bool requestAnimation(Unit* unit, std::string animName);
+	void queueAnimation(Unit* unit, std::string animName);
 	void stopAnimations(Unit* unit);
 
 	std::list<Unit*> getEnemies(Unit* unit);

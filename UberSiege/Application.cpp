@@ -157,6 +157,7 @@ void Application::processUnitScripts() {
 			.def("moveBackwards",		&Simulation::moveBackwards)
 			.def("inflictDamage",		&Simulation::inflictDamage)
 			.def("requestAnimation",	&Simulation::requestAnimation)
+			.def("queueAnimation",		&Simulation::queueAnimation)
 			.def("stopAnimations",		&Simulation::stopAnimations)
 			.def("getNearestEnemy",		&Simulation::getNearestEnemy)
 			.def("getEnemies",			&Simulation::getEnemiesLua, luabind::raw(_2)),
