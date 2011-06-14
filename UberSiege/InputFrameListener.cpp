@@ -167,7 +167,7 @@ bool InputFrameListener::keyPressed(const OIS::KeyEvent& evt) {
 			break;
 
 		case OIS::KC_X: // DEBUG
-			simulation->addUnit(player1, "infantry");
+			simulation->addUnit(player1, "ram");
 			break;
 		case OIS::KC_C: // DEBUG
 			simulation->addUnit(player2, "infantry");
