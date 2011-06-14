@@ -14,7 +14,6 @@ InputFrameListener::InputFrameListener(Application* app) {
 	MapInfo info;
 	app->loadMap("map1", info);
 	simulation->loadMap(info);
-	simulation->setPlayersCount(2);
 	player1 = new Player("p1");
 	player2 = new Player("p2");
 	simulation->addPlayer(player1);
@@ -36,8 +35,10 @@ InputFrameListener::InputFrameListener(Application* app) {
 	keyboard->setEventCallback(this);
 
 	initialize();
-	scanForLayouts(player1, boardWidget1);
-	scanForLayouts(player2, boardWidget2);
+	scanForLayouts(player1, p1Layouts);
+	scanForLayouts(player2, p2Layouts);
+	boardWidget1->refreshAll();
+	boardWidget2->refreshAll();
 }
 
 InputFrameListener::~InputFrameListener() {
@@ -60,10 +61,20 @@ void InputFrameListener::unbindKey(OIS::KeyCode code) {
 	bindings.erase(code);
 }
 
-void InputFrameListener::scanForLayouts(Player* p, PuzzleBoardWidget* pbw) {
-	std::vector<std::string> layouts = app->getLayoutFinder()->scan(p->getBoard());
-	if(layouts.size() > 0)
-		pbw->refreshAll();
+bool InputFrameListener::scanForLayouts(Player* p, std::vector<std::string>& layouts) {
+	std::vector<std::string> found = app->getLayoutFinder()->scan(p->getBoard());
+	if(found.size() > 0) {
+		layouts.insert(layouts.end(), found.begin(), found.end());
+		return true;
+	}
+	else return false;
+}
+
+void InputFrameListener::spawnUnits(Player* player, std::vector<std::string>& layouts) {
+	for(std::vector<std::string>::iterator it = layouts.begin(); it != layouts.end(); ++it) {
+		std::cout << "Spawing unit " << *it << std::endl;
+		simulation->addUnit(player, *it);
+	}
 }
 
 void InputFrameListener::processAction(Action a) {	
@@ -83,19 +94,25 @@ void InputFrameListener::processAction(Action a) {
 		case P1_SELECT:
 		{
 			boardWidget1->selectCurrent();
-			scanForLayouts(player1, boardWidget1);
+			if(scanForLayouts(player1, p1Layouts))
+				boardWidget1->refreshAll();
 		}
 			break;
 		case P1_CLEAR:
 		{
 			boardWidget1->clear();
-			scanForLayouts(player1, boardWidget1);
+			p1Layouts.clear();
+			if(scanForLayouts(player1, p1Layouts))
+				boardWidget1->refreshAll();
 		}
 			break;
 		case P1_CONFIRM:
 		{
+			spawnUnits(player1, p1Layouts);
 			boardWidget1->accept();
-			scanForLayouts(player1, boardWidget1);
+			p1Layouts.clear();
+			if(scanForLayouts(player1, p1Layouts))
+				boardWidget1->refreshAll();
 		}
 			break;	
 		case P2_MOVE_LEFT:
@@ -113,19 +130,26 @@ void InputFrameListener::processAction(Action a) {
 		case P2_SELECT:
 		{
 			boardWidget2->selectCurrent();
-			scanForLayouts(player2, boardWidget2);
+			if(scanForLayouts(player2, p2Layouts))
+				boardWidget2->refreshAll();
 		}
 			break;
 		case P2_CLEAR:
 		{
 			boardWidget2->clear();
-			scanForLayouts(player2, boardWidget2);
+			p2Layouts.clear();
+			if(scanForLayouts(player2, p2Layouts))
+				boardWidget2->refreshAll();
 		}
 			break;
 		case P2_CONFIRM:
 		{
+			spawnUnits(player2, p2Layouts);
 			boardWidget2->accept();
-			scanForLayouts(player2, boardWidget2);
+
+			p2Layouts.clear();
+			if(scanForLayouts(player2, p2Layouts))
+				boardWidget2->refreshAll();
 		}
 			break;
 		default:

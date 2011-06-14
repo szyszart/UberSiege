@@ -10,7 +10,7 @@
 
 #include "lua.hpp"
 #include <luabind/luabind.hpp>
-#include <luabind/iterator_policy.hpp>
+#include <luabind/raw_policy.hpp>
 
 #include <map>
 
@@ -37,6 +37,8 @@ public:
 	CEGUI::OgreRenderer* getGUIRenderer() { return renderer; }
 	Ogre::SceneManager* getSceneManager() { return sceneManager; }
 	bool loadMap(std::string name, MapInfo& info);
+
+	bool getEventHandler(std::string className, std::string eventName, luabind::object& obj);
 
 	static std::map<std::string, OIS::KeyCode> keyNames;
 	static std::map<std::string, Action> actionNames;

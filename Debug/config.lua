@@ -4,9 +4,9 @@ layouts = {
         unit = "archer",
         minTech = 1
     },    
-    archer = {
+    infantry = {
         layout = {"WI", "IW"}, -- { top, bottom }   
-        unit = "archer",
+        unit = "infantry",
         minTech = 1
     },    
     dragon = {

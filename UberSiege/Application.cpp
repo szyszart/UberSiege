@@ -56,6 +56,20 @@ Application::~Application() {
 		lua_close(lua);
 }
 
+bool Application::getEventHandler(std::string className, std::string eventName, luabind::object& obj) {
+	UnitTypes::iterator it = unitTypes.find(className);
+	if(it != unitTypes.end()) {
+		UnitHandlers& handlers = it->second;
+		UnitHandlers::iterator it2 = handlers.find(eventName);
+		if(it2 != handlers.end()) {
+			obj = it2->second;
+			return true;
+		}
+		else return false;
+	}
+	return false;
+}
+
 Ogre::Vector3 parsePoint(luabind::object o) {
 	return Ogre::Vector3(luabind::object_cast<double>(o[1]),
 		luabind::object_cast<double>(o[2]),
@@ -141,10 +155,14 @@ void Application::processUnitScripts() {
 		luabind::class_<Simulation>("Simulation")
 			.def("moveForwards",		&Simulation::moveForwards)
 			.def("moveBackwards",		&Simulation::moveBackwards)
-			.def("enemyCollides",		&Simulation::enemyCollides)
 			.def("inflictDamage",		&Simulation::inflictDamage)
-			.def("getUnitData",			&Simulation::getUnitData)
-			.def("requestAnimation",	&Simulation::requestAnimation),
+			.def("requestAnimation",	&Simulation::requestAnimation)
+			.def("stopAnimations",		&Simulation::stopAnimations)
+			.def("getNearestEnemy",		&Simulation::getNearestEnemy)
+			.def("getEnemies",			&Simulation::getEnemiesLua, luabind::raw(_2)),
+		luabind::class_<Unit>("Unit")
+			.property("pos", &Unit::getPos, &Unit::setPos)
+			.def("getPos", &Unit::getPos),
 		luabind::def("registerEvents", &LogicProcessor::registerEvents)
 	];
 
@@ -156,9 +174,6 @@ void Application::processUnitScripts() {
 				std::string unitClass = luabind::object_cast<std::string>(i.key());
 				std::string filename = luabind::object_cast<std::string>(*i);
 				std::cout << "processUnitScripts: processing logic for " << unitClass << std::endl;										
-//				lua_State* luaTemp = luaL_newstate();
-//				luabind::open(luaTemp);
-
 
 				LogicProcessor::clearHandlers();
 
@@ -168,8 +183,7 @@ void Application::processUnitScripts() {
 				}	
 				else {
 					unitTypes[unitClass] = LogicProcessor::getHandlers();
-				}
-//				lua_close(luaTemp);				
+				}	
 			}
 			catch(luabind::cast_failed e) {
 				std::cerr << "processUnitScripts: invalid unit data, expected a string!" << std::endl;				

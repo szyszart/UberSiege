@@ -50,7 +50,8 @@ public:
 private:
 	void initialize();
 	void processAction(Action a);
-	void scanForLayouts(Player* p, PuzzleBoardWidget* pbw);
+	bool scanForLayouts(Player* p, std::vector<std::string>& layouts);
+	void spawnUnits(Player* p, std::vector<std::string>& layouts);
 	CEGUI::MouseButton convertButton(OIS::MouseButtonID id);
 
 	OIS::InputManager* inputManager;
@@ -63,6 +64,9 @@ private:
 	Player* player2;
 	PuzzleBoardWidget* boardWidget1;
 	PuzzleBoardWidget* boardWidget2;
+
+	std::vector<std::string> p1Layouts;
+	std::vector<std::string> p2Layouts;
 
 	KeyBindings bindings;
 	bool isRunning;
