@@ -121,7 +121,7 @@ private:
 // owns Board
 class Player {
 public:
-	Player(std::string name);
+	Player(std::string name, int initialHP = 2000);
 	~Player();
 	PuzzleBoard* getBoard() { return board; }
 	std::string getName() { return name; }
@@ -131,6 +131,9 @@ public:
 	double getYaw() { return yaw; }
 	double const getDirection() { return direction; }
 	void setDirection(double d) { direction = d; }
+
+	inline int getHP() { return hp; }
+	inline void setHP(int newHP) { hp = newHP; }
 
 	bool hasWaitingUnits() { return !unitQueue.empty(); }
 	Unit* dequeueUnit() { 
@@ -148,7 +151,7 @@ private:
 	PuzzleBoard* board;
 	std::string name;
 	unsigned int techLevel;
-	int castleHP;
+	int hp;
 	std::list<Unit*> unitQueue;
 	Zone spawnZone;
 	double yaw;	// k¹t obrotu jednostek gracza

@@ -4,8 +4,9 @@ using namespace std;
 
 const double Simulation::SPAWN_ZONE_WIDTH = 0.1;
 
-Player::Player(string name) {
+Player::Player(string name, int initialHP) {
 	this->name = name;
+	hp = initialHP;
 	board = new PuzzleBoard();
 }
 
@@ -321,6 +322,9 @@ void Simulation::tick(float timeElapsed) {
 			}
 			else if(isInSpawnZone(u)) {
 				callHandler(u, "Leave");
+				// pojazd wroga dotar³ do zamku, uaktualnij HP
+				Player* p = u->getPlayer();
+				p->setHP(p->getHP() - u->getHP());
 				u->setActive(false);
 			}		
 			else {
