@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Imageset Name="U_icons" Imagefile="u_icons.png" >
+<Image Name="Root" XPos="0" YPos="0" Width="256" Height="512" />
+<Image Name="ram" XPos="0" YPos="0" Width="256" Height="256" />
+<Image Name="infantry" XPos="0" YPos="256" Width="128" Height="128" />
+<Image Name="archer" XPos="0" YPos="384" Width="128" Height="128" />
+</Imageset>
