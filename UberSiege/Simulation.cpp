@@ -21,8 +21,8 @@ Ogre::AnimationState* Unit::fetchAnimation(string name) {
 	Ogre::AnimationStateIterator iter = set->getAnimationStateIterator();
 	while(iter.hasMoreElements())
 		std::cout << iter.getNext()->getAnimationName() << std::endl;
-	
 	*/
+	
 	Ogre::AnimationState* anim = NULL;
 	if(it == anims.end()) {		
 		anim = entity->getAnimationState(name);
@@ -45,6 +45,8 @@ bool Unit::addAnimation(string name) {
 
 void Unit::clearAnimations() {
 	anims.clear();
+	animQueue.clear(); 
+	currentQueuedAnim = NULL;
 }
 
 Simulation::Simulation(Application* app) {
@@ -103,6 +105,13 @@ luabind::object Simulation::getEnemiesLua(lua_State* lua, Unit* unit) {
 
 void Simulation::inflictDamage(Unit* unit, Unit* enemy, unsigned int damage) {
 	enemy->setHP(enemy->getHP() - damage);
+	cout << "hp left " << enemy->getHP() << endl;
+}
+
+double Simulation::getDistance(Unit* u1, Unit* u2) {
+	double pos1 = (path * u1->getPos()).length();
+	double pos2 = (path * u2->getPos()).length();
+	return abs(pos1 - pos2);
 }
 
 bool Simulation::requestAnimation(Unit* unit, string animName) {
@@ -154,6 +163,7 @@ void Simulation::addUnit(Player* player, std::string className) {
 	// TODO: nazwa pliku .mesh odczytywana z pliku konfiguracyjnego!
 	unit->setDirection(player->getDirection());
 	Ogre::Entity* ent = sceneManager->createEntity("infantry.mesh");
+	unit->setWidth(ent->getBoundingRadius());
 	unit->setEntity(ent);	
 	unit->setPos(player->getSpawnZone().start);
 	player->enqueueUnit(unit);
@@ -242,8 +252,8 @@ bool Simulation::collisions(Unit* unit) {
 bool Simulation::collide(Unit* u1, Unit *u2) {
 	double pos1 = (path * u1->getPos()).length();
 	double pos2 = (path * u2->getPos()).length();
-	double w1 = u1->getWidth() / 2;
-	double w2 = u2->getWidth() / 2;
+	double w1 = u1->getWidth();
+	double w2 = u2->getWidth();
 	return (((pos2 - w2 >= pos1 - w1) && (pos2 - w2 <= pos1 + w1))
 		|| ((pos2 + w2 >= pos1 - w1) && (pos2 + w2 <= pos1 + w1)));
 }
@@ -257,7 +267,11 @@ bool Simulation::isZoneEmpty(Zone z) {
 	// TODO: wydajniej, na bie¿¹co uaktualniaj informacje o jednostkach wchodz¹cych do strefy
 	for(list<Unit*>::iterator it = units.begin(); it != units.end(); ++it) {
 		Unit* u = *it;
-		if((u->getPos() >= z.start) && (u->getPos() <= z.end))
+		double w = u->getWidth();
+		double pos = (path * u->getPos()).length();
+
+		if( ((pos - w >= z.start) && (pos - w <= z.end)) ||		
+			((pos + w >= z.start) && (pos + w <= z.end)) )
 			return false;
 	}
 	return true;
@@ -280,9 +294,13 @@ void Simulation::tick(float timeElapsed) {
 		if(p->hasWaitingUnits()) {
 			Zone spawnZone = p->getSpawnZone();
 			if(isZoneEmpty(spawnZone)) {
-				Unit* u = p->dequeueUnit();
-				addUnit(u);
-				callHandler(u, "Init");
+				Unit* u = p->peekUnit();
+				if(!collisions(u)) {
+					p->dequeueUnit();
+					addUnit(u);
+					callHandler(u, "Init");
+				}
+				else cout << "Nope, there's a collision" << endl;
 			}
 		}
 	}
@@ -290,7 +308,6 @@ void Simulation::tick(float timeElapsed) {
 	list<Unit*>::iterator it = units.begin();
 	while(it != units.end()) {
 		Unit* u = *it;
-		callHandler(u, "Tick");
 		if(!u->isActive()) {
 			if(!u->hasQueuedAnimations()) {
 				removeUnit(it++);
@@ -299,6 +316,7 @@ void Simulation::tick(float timeElapsed) {
 			else u->advanceAnimations(timeElapsed);
 		}
 		else {
+			callHandler(u, "Tick");
 			if(u->isDead()) {			
 				callHandler(u, "Die");
 				u->setActive(false);

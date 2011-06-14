@@ -75,6 +75,7 @@ public:
 			if(!currentQueuedAnim) {
 				while(!animQueue.empty() && !currentQueuedAnim) {
 					currentQueuedAnim = fetchAnimation(animQueue.front());
+					std::cout << "popping queued anim " << animQueue.front() << std::endl;
 					animQueue.pop_front();
 				}
 			}			
@@ -95,8 +96,8 @@ public:
 			}
 		}
 	}
-	bool hasQueuedAnimations() { return (!animQueue.empty() || !currentQueuedAnim); }	
-	void enqueueAnimation(std::string name) { animQueue.push_back(name); }
+	bool hasQueuedAnimations() { return (!animQueue.empty() || currentQueuedAnim); }	
+	void enqueueAnimation(std::string name) { animQueue.push_back(name); }	
 private:
 	Ogre::AnimationState* fetchAnimation(std::string name);
 
@@ -140,6 +141,9 @@ public:
 	void enqueueUnit(Unit* u) {
 		unitQueue.push_back(u);
 	}
+	Unit* peekUnit() {
+		return (unitQueue.empty() ? NULL : unitQueue.front());
+	}
 private:
 	PuzzleBoard* board;
 	std::string name;
@@ -173,6 +177,7 @@ public:
 	bool requestAnimation(Unit* unit, std::string animName);
 	void queueAnimation(Unit* unit, std::string animName);
 	void stopAnimations(Unit* unit);
+	double getDistance(Unit* u1, Unit* u2);
 
 	std::list<Unit*> getEnemies(Unit* unit);
 

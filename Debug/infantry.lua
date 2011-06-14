@@ -1,25 +1,25 @@
 -- infantry.lua
-local MELEE_DAMAGE          = 1.0
-local MAX_ATTACK_DISTANCE   = 0.1
+local MELEE_DAMAGE          = 50.0
+local MAX_ATTACK_DISTANCE   = 10.0
+local RUN_VELOCITY          = 0.1
 
 function onTick(sim, unit, event)
-    local foe = sim:getNearestEnemy(unit)
-
-    if foe ~= nil and math.abs(unit:getPos() - foe:getPos()) <= MAX_ATTACK_DISTANCE then        
+    local foe = sim:getNearestEnemy(unit)       
+    if foe ~= nil and sim:getDistance(foe, unit) <= MAX_ATTACK_DISTANCE then               
         sim:stopAnimations(unit)
-        --sim:requestAnimation(unit, 'Act: Attack')
-        sim:inflictDamage(unit, foe, 15)
+        sim:queueAnimation(unit, 'Act: Action')        
+        sim:inflictDamage(unit, foe, MELEE_DAMAGE)
     else
         sim:requestAnimation(unit, 'Act: Run_upper')
         sim:requestAnimation(unit, 'Act: Run_lower')
-        sim:moveForwards(unit, 0.1)         
+        sim:moveForwards(unit, RUN_VELOCITY)         
     end
 end
 
 function onDie(sim, unit, event)
-    print('onDie called')
+    print('Die called')
     sim:stopAnimations(unit)
-    sim:queueAnimation(unit, 'Act: Death')    
+    sim:queueAnimation(unit, 'Act: Death')        
 end
 
 events = {
