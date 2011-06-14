@@ -1,24 +1,26 @@
 layouts = {
     simple = {
         layout = {"II", ""},
-        unit = "archer",
-        minTech = 1
+        unit = "ram"
     },    
     infantry = {
         layout = {"WI", "IW"}, -- { top, bottom }   
-        unit = "infantry",
-        minTech = 1
+        unit = "infantry"
     },    
-    dragon = {
-        layout = {"FMMF", "MFFM"},
-        unit = "dragon",
-        minTech = 4        
-    }
+    simple = {
+        layout = {"MM", ""},
+        unit = "archer"
+    },        
+--    dragon = {
+--        layout = {"FMMF", "MFFM"},
+--        unit = "dragon"
+--    }
 }
 
 units = {
     archer =     "archer.lua",
-    infantry =   "infantry.lua"
+    infantry =   "infantry.lua",
+    ram =        "ram.lua"
 }
 
 bindings = {    

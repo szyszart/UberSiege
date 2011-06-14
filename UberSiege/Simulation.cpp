@@ -22,7 +22,6 @@ Ogre::AnimationState* Unit::fetchAnimation(string name) {
 	while(iter.hasMoreElements())
 		std::cout << iter.getNext()->getAnimationName() << std::endl;
 	*/
-	
 	Ogre::AnimationState* anim = NULL;
 	if(it == anims.end()) {		
 		anim = entity->getAnimationState(name);
@@ -162,7 +161,7 @@ void Simulation::addUnit(Player* player, std::string className) {
 	Unit* unit = new Unit(player, className, 100);
 	// TODO: nazwa pliku .mesh odczytywana z pliku konfiguracyjnego!
 	unit->setDirection(player->getDirection());
-	Ogre::Entity* ent = sceneManager->createEntity("infantry.mesh");
+	Ogre::Entity* ent = sceneManager->createEntity(className + ".mesh");
 	unit->setWidth(ent->getBoundingRadius());
 	unit->setEntity(ent);	
 	unit->setPos(player->getSpawnZone().start);
@@ -300,7 +299,6 @@ void Simulation::tick(float timeElapsed) {
 					addUnit(u);
 					callHandler(u, "Init");
 				}
-				else cout << "Nope, there's a collision" << endl;
 			}
 		}
 	}

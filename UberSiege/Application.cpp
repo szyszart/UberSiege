@@ -255,7 +255,7 @@ void Application::parseOneLayout(std::string name, luabind::object& descr) {
 				std::string topRow = luabind::object_cast<std::string>(layout[1]);
 				std::string bottomRow = luabind::object_cast<std::string>(layout[2]);
 				std::cout << "Adding " << name << " as " << topRow << ", " << bottomRow << std::endl;
-				layoutFinder->addLayout(name, std::pair<std::string, std::string>(topRow, bottomRow));
+				layoutFinder->addLayout(unitName, std::pair<std::string, std::string>(topRow, bottomRow));
 			}
 			catch(luabind::cast_failed e) {
 				std::cerr << "parseOneLayout: invalid key, expected a string!" << std::endl;				
