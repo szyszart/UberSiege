@@ -52,8 +52,8 @@ Application::~Application() {
 
 	unitTypes.clear();
 
-//	if(lua)
-	//	lua_close(lua);
+	if(lua)
+		lua_close(lua);
 }
 
 Ogre::Vector3 parsePoint(luabind::object o) {
@@ -137,6 +137,17 @@ void Application::processConfig() {
 }
 
 void Application::processUnitScripts() {
+	luabind::module(lua) [
+		luabind::class_<Simulation>("Simulation")
+			.def("moveForwards",		&Simulation::moveForwards)
+			.def("moveBackwards",		&Simulation::moveBackwards)
+			.def("enemyCollides",		&Simulation::enemyCollides)
+			.def("inflictDamage",		&Simulation::inflictDamage)
+			.def("getUnitData",			&Simulation::getUnitData)
+			.def("requestAnimation",	&Simulation::requestAnimation),
+		luabind::def("registerEvents", &LogicProcessor::registerEvents)
+	];
+
 	std::vector<std::string> names;
 	luabind::object layouts = luabind::globals(lua)["units"];
 	if(luabind::type(layouts) == LUA_TTABLE) {
@@ -145,29 +156,20 @@ void Application::processUnitScripts() {
 				std::string unitClass = luabind::object_cast<std::string>(i.key());
 				std::string filename = luabind::object_cast<std::string>(*i);
 				std::cout << "processUnitScripts: processing logic for " << unitClass << std::endl;										
-				lua_State* luaTemp = luaL_newstate();
-				luabind::open(luaTemp);
-				luabind::module(luaTemp) [
-					luabind::class_<Simulation>("Simulation")
-						.def("moveForwards",		&Simulation::moveForwards)
-						.def("moveBackwards",		&Simulation::moveBackwards)
-						.def("enemyCollides",		&Simulation::enemyCollides)
-						.def("inflictDamage",		&Simulation::inflictDamage)
-						.def("getUnitData",			&Simulation::getUnitData)
-						.def("requestAnimation",	&Simulation::requestAnimation),
-					luabind::def("registerEvents", &LogicProcessor::registerEvents)
-				];
+//				lua_State* luaTemp = luaL_newstate();
+//				luabind::open(luaTemp);
+
 
 				LogicProcessor::clearHandlers();
 
-				if(luaL_dofile(luaTemp, filename.c_str()) != 0) {
-					std::cerr << lua_tostring(luaTemp, -1) << std::endl;
-					lua_pop(luaTemp, 1);										
+				if(luaL_dofile(lua, filename.c_str()) != 0) {
+					std::cerr << lua_tostring(lua, -1) << std::endl;
+					lua_pop(lua, 1);										
 				}	
 				else {
 					unitTypes[unitClass] = LogicProcessor::getHandlers();
 				}
-				lua_close(luaTemp);				
+//				lua_close(luaTemp);				
 			}
 			catch(luabind::cast_failed e) {
 				std::cerr << "processUnitScripts: invalid unit data, expected a string!" << std::endl;				
