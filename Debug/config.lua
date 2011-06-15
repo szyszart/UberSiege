@@ -1,11 +1,11 @@
 layouts = {
     simple = {
         layout = {"II", ""},
-        unit = "ram"
+        unit = "infantry"
     },    
     infantry = {
         layout = {"WI", "IW"}, -- { top, bottom }   
-        unit = "infantry"
+        unit = "ram"
     },    
     simple = {
         layout = {"MM", ""},

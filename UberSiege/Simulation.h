@@ -118,6 +118,16 @@ private:
 	std::list<std::string> animQueue;
 };
 
+struct Projectile {
+	Ogre::Vector2 vel;
+	Ogre::Vector2 pos;
+	int damage;
+	Unit* unit;
+	Ogre::SceneNode* node;
+	Ogre::Entity* entity;
+	//int range;
+};
+
 // owns Board
 class Player {
 public:
@@ -181,6 +191,7 @@ public:
 	void queueAnimation(Unit* unit, std::string animName);
 	void stopAnimations(Unit* unit);
 	double getDistance(Unit* u1, Unit* u2);
+	void throwProjectile(Unit* unit, double velX, double velY, int damage);
 
 	std::list<Unit*> getEnemies(Unit* unit);
 
@@ -194,6 +205,7 @@ private:
 	bool inBounds(Unit* unit);		// true, jeœli jednostka mieœci siê na œcie¿ce
 	bool isInSpawnZone(Unit* unit);
 	bool collide(Unit* u1, Unit *u2);
+	bool collide(Unit* u, Projectile p);
 
 	void callHandler(Unit* u, std::string eventName);
 
@@ -207,6 +219,7 @@ private:
 	
 	std::vector<Player*> players;
 	std::list<Unit*> units;
+	std::list<Projectile> projectiles;
 	MapInfo info;
 
 	Ogre::Vector3 path;

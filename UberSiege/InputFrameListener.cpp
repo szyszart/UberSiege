@@ -173,6 +173,9 @@ bool InputFrameListener::keyPressed(const OIS::KeyEvent& evt) {
 		case OIS::KC_C: // DEBUG
 			simulation->addUnit(player2, "infantry");
 			break;
+		case OIS::KC_B: // DEBUG
+			simulation->addUnit(player1, "archer");
+			break;
 
 		default:
 			// czy wciœniêto klawisz przypisany jakiejœ akcji

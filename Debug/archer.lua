@@ -9,6 +9,7 @@ function onTick(sim, unit, event)
         sim:stopAnimations(unit)
         sim:queueAnimation(unit, 'Act: Attack')        
         sim:inflictDamage(unit, foe, RANGE_DAMAGE)
+        --sim:throwProjectile(unit, 0.1, 1.0, 20)
     else
         sim:requestAnimation(unit, 'Act: Walk_upper')
         sim:requestAnimation(unit, 'Act: Walk_lower')

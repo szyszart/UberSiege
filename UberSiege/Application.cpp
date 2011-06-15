@@ -161,6 +161,7 @@ void Application::processUnitScripts() {
 			.def("stopAnimations",		&Simulation::stopAnimations)
 			.def("getNearestEnemy",		&Simulation::getNearestEnemy)
 			.def("getDistance",			&Simulation::getDistance)
+			.def("throwProjectile",		&Simulation::throwProjectile)
 			.def("getEnemies",			&Simulation::getEnemiesLua, luabind::raw(_2)),
 		luabind::class_<Unit>("Unit")
 			.property("pos", &Unit::getPos, &Unit::setPos)

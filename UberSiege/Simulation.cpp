@@ -71,6 +71,20 @@ list<Unit*> Simulation::getEnemies(Unit* unit) {
 	return result;
 }
 
+void Simulation::throwProjectile(Unit* unit, double velX, double velY, int damage) {
+	Projectile p;
+	double dir = unit->getPlayer()->getDirection();
+	p.vel = dir * Ogre::Vector2(velX, velY);
+	p.pos = Ogre::Vector2(unit->getPos(), unit->getEntity()->getBoundingRadius() / 2);
+	p.damage = damage;
+	p.entity = sceneManager->createEntity("Arrow.mesh");
+	Ogre::SceneNode* node = sceneManager->getRootSceneNode()->createChildSceneNode();
+	node->attachObject(p.entity);
+	p.node = node;
+	p.unit = unit;
+	projectiles.push_back(p);
+}
+
 void Simulation::moveForwards(Unit* unit, double vel) {
 	unit->setVel(unit->getDirection() * abs(vel));	
 }
@@ -249,13 +263,23 @@ bool Simulation::collisions(Unit* unit) {
 	return false;
 }
 
-bool Simulation::collide(Unit* u1, Unit *u2) {
+bool Simulation::collide(Unit* u1, Unit* u2) {
 	double pos1 = (path * u1->getPos()).length();
 	double pos2 = (path * u2->getPos()).length();
 	double w1 = u1->getWidth();
 	double w2 = u2->getWidth();
 	return (((pos2 - w2 >= pos1 - w1) && (pos2 - w2 <= pos1 + w1))
 		|| ((pos2 + w2 >= pos1 - w1) && (pos2 + w2 <= pos1 + w1)));
+}
+
+bool Simulation::collide(Unit* u, Projectile p) {
+	double posU = (path * u->getPos()).length();
+	double wU = u->getWidth();
+
+	double posP = (path * p.pos.x).length();
+	double wP = 10.0;	// TODO: dynamic range
+	return (((posP - wP >= posU - wU) && (posP - wP <= posU + wU))
+		|| ((posP + wP >= posU - wU) && (posP + wP <= posU + wU)));
 }
 
 bool Simulation::inBounds(Unit* unit) {
@@ -303,7 +327,7 @@ void Simulation::tick(float timeElapsed) {
 			}
 		}
 	}
-	
+
 	list<Unit*>::iterator it = units.begin();
 	while(it != units.end()) {
 		Unit* u = *it;
