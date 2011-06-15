@@ -14,7 +14,7 @@ material _missing_material_
     }
 }
 
-material Wenge Wood 
+material Castle_roof 
 {
 	receive_shadows on
 	technique
@@ -22,16 +22,16 @@ material Wenge Wood
 		pass
 		{
 			cull_hardware none
-			ambient 0.48876655101776123 0.36687955260276794 0.2911711037158966 1.0
-			diffuse 0.3910132466407603 0.29350364645575944 0.23293688644374733 1.0
-			specular 0.0 0.0 0.0 1.0 43.25
+			ambient 0.13285905122756958 0.056194085627794266 0.02528058923780918 1.0
+			diffuse 0.10628724256585897 0.044955269172121115 0.020224471691615453 1.0
+			specular 0.5 0.5 0.5 1.0 12.5
 			emissive 0.0 0.0 0.0 1.0
 			scene_blend one zero
-			vray <bpy ID property from "MAWenge Wood">
+			vray <bpy ID property from "MACastle_roof">
 		}
 	}
 }
-material ruined.stone 
+material Castle_stone 
 {
 	receive_shadows on
 	technique
@@ -39,12 +39,12 @@ material ruined.stone
 		pass
 		{
 			cull_hardware none
-			ambient 0.800000011920929 0.800000011920929 0.800000011920929 1.0
-			diffuse 0.4985460832498383 0.4985460832498383 0.4985460832498383 1.0
-			specular 0.05921735242009163 0.05921735242009163 0.05921735242009163 1.0 6.75
+			ambient 0.16794352233409882 0.16794352233409882 0.16794352233409882 1.0
+			diffuse 0.13435481986932185 0.13435481986932185 0.13435481986932185 1.0
+			specular 0.02380952425301075 0.02380952425301075 0.02380952425301075 1.0 10.75
 			emissive 0.0 0.0 0.0 1.0
 			scene_blend one zero
-			vray <bpy ID property from "MAruined.stone">
+			vray <bpy ID property from "MACastle_stone">
 		}
 	}
 }
