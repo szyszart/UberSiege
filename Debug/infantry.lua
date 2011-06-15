@@ -1,6 +1,6 @@
 -- infantry.lua
 local MELEE_DAMAGE          = 50.0
-local MAX_ATTACK_DISTANCE   = 10.0
+local MAX_ATTACK_DISTANCE   = 12.0
 local RUN_VELOCITY          = 0.1
 
 function onTick(sim, unit, event)
