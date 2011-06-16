@@ -16,21 +16,12 @@ Player::~Player() {
 
 Ogre::AnimationState* Unit::fetchAnimation(string name) {
 	map<string, Ogre::AnimationState*>::iterator it = anims.find(name);
-	/*
-	std::cout << "Animation list" << std::endl;
-	Ogre::AnimationStateSet* set = entity->getAllAnimationStates();
-	Ogre::AnimationStateIterator iter = set->getAnimationStateIterator();
-	while(iter.hasMoreElements())
-		std::cout << iter.getNext()->getAnimationName() << std::endl;
-	*/
+
 	Ogre::AnimationState* anim = NULL;
 	if(it == anims.end()) {		
 		anim = entity->getAnimationState(name);
 		if(!anim)
 			return NULL;
-		anim->setEnabled(true);
-		anim->setTimePosition(0.0);
-		anim->setLoop(false);
 	}
 	return anim;
 }
@@ -39,13 +30,25 @@ bool Unit::addAnimation(string name) {
 	Ogre::AnimationState* anim = fetchAnimation(name);
 	if(!anim)
 		return false;
+	anim->setEnabled(true);
+	anim->setLoop(false);
 	anims[name] = anim;
 	return true;
 }
 
 void Unit::clearAnimations() {
+	std::map<std::string, Ogre::AnimationState*>::iterator it = anims.begin();
+	while(it != anims.end()) {
+		it->second->setEnabled(false);
+		++it;
+	}
 	anims.clear();
+}
+
+void Unit::clearQueuedAnimations() {
 	animQueue.clear(); 
+	if(currentQueuedAnim)
+		currentQueuedAnim->setEnabled(false);
 	currentQueuedAnim = NULL;
 }
 
@@ -54,6 +57,7 @@ Simulation::Simulation(Application* app) {
 	sceneManager = app->getSceneManager();
 	camera = app->getCamera();
 	loader = new TerrainLoader(sceneManager);
+	loser = NULL;
 	createScene();
 }
 
@@ -118,8 +122,9 @@ luabind::object Simulation::getEnemiesLua(lua_State* lua, Unit* unit) {
 }
 
 void Simulation::inflictDamage(Unit* unit, Unit* enemy, unsigned int damage) {
-	enemy->setHP(enemy->getHP() - damage);
-	cout << "hp left " << enemy->getHP() << endl;
+	if(!enemy->isDead()) {
+		enemy->setHP(enemy->getHP() - damage);
+	}
 }
 
 double Simulation::getDistance(Unit* u1, Unit* u2) {
@@ -138,6 +143,10 @@ void Simulation::queueAnimation(Unit* unit, std::string animName) {
 
 void Simulation::stopAnimations(Unit* unit) {
 	unit->clearAnimations();
+}
+
+void Simulation::stopQueuedAnimations(Unit* unit) {
+	unit->clearQueuedAnimations();
 }
 
 bool Simulation::loadMap(MapInfo& info) {
@@ -172,9 +181,8 @@ bool Simulation::loadMap(MapInfo& info) {
 }
 
 void Simulation::addUnit(Player* player, std::string className) {
-	// TODO: dodaj odczyt pocz¹tkowych wartoœci HP
 	Unit* unit = new Unit(player, className, 100);
-	// TODO: nazwa pliku .mesh odczytywana z pliku konfiguracyjnego!
+
 	unit->setDirection(player->getDirection());
 	Ogre::Entity* ent = sceneManager->createEntity(className + ".mesh");
 	unit->setWidth(ent->getBoundingRadius());
@@ -277,7 +285,7 @@ bool Simulation::collide(Unit* u, Projectile p) {
 	double wU = u->getWidth();
 
 	double posP = (path * p.pos.x).length();
-	double wP = 10.0;	// TODO: dynamic range
+	double wP = 10.0;
 	return (((posP - wP >= posU - wU) && (posP - wP <= posU + wU))
 		|| ((posP + wP >= posU - wU) && (posP + wP <= posU + wU)));
 }
@@ -288,7 +296,6 @@ bool Simulation::inBounds(Unit* unit) {
 }
 
 bool Simulation::isZoneEmpty(Zone z) {
-	// TODO: wydajniej, na bie¿¹co uaktualniaj informacje o jednostkach wchodz¹cych do strefy
 	for(list<Unit*>::iterator it = units.begin(); it != units.end(); ++it) {
 		Unit* u = *it;
 		double w = u->getWidth();
@@ -332,7 +339,7 @@ void Simulation::tick(float timeElapsed) {
 	while(it != units.end()) {
 		Unit* u = *it;
 		if(!u->isActive()) {
-			if(!u->hasQueuedAnimations()) {
+			if(!u->hasQueuedAnimations()) {			
 				removeUnit(it++);
 				continue;
 			}
@@ -340,7 +347,7 @@ void Simulation::tick(float timeElapsed) {
 		}
 		else {
 			callHandler(u, "Tick");
-			if(u->isDead()) {			
+			if(u->isDead()) {
 				callHandler(u, "Die");
 				u->setActive(false);
 			}
@@ -360,11 +367,11 @@ void Simulation::tick(float timeElapsed) {
 				if(!collisions(u) && inBounds(u)) {
 					Ogre::SceneNode* node = u->getSceneNode();
 					if(node) {				
-						node->setPosition(info.pathStart + path * u->getPos());
-						u->advanceAnimations(timeElapsed);
+						node->setPosition(info.pathStart + path * u->getPos());						
 					}
 				}
 				else u->setPos(oldPos);
+				u->advanceAnimations(timeElapsed);
 			}	
 		}
 		++it;
@@ -377,11 +384,23 @@ void Simulation::callHandler(Unit* u, std::string eventName) {
 		return;
 	if(luabind::type(callback) == LUA_TFUNCTION) {
 		try {
-			luabind::call_function<void>(callback, this, u, NULL);	// TODO: przeka¿ informacje o zdarzeniu zamiast NULL
+			luabind::call_function<void>(callback, this, u, NULL);
 		}		
 		catch(std::exception e) {
 			cerr << "Lua runtime exception in Simulation::callHandler " << eventName << endl;
 			cerr << e.what() << endl;
 		}
 	}	
+}
+
+bool Simulation::hasEnded() {
+	std::vector<Player*>::iterator it = players.begin();
+	while(it != players.end()) {
+		Player* p = *it;
+		if(p->getHP() <= 0) {
+			loser = p;
+			return true;
+		}
+		++it;
+	}
 }

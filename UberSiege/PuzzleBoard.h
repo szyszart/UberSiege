@@ -35,6 +35,11 @@ private:
 	int height;
 };
 
+struct WidgetBlock {
+	std::string layout;
+	int blockNumber;
+};
+
 class PuzzleBoardWidget {
 public:
 	PuzzleBoardWidget(PuzzleBoard* board);
@@ -51,6 +56,9 @@ public:
 	void clear();	
 	void accept();
 	void refreshAll();
+
+	WidgetBlock getAt(int x, int y);
+	void setAt(WidgetBlock& b, int x, int y);
 private:
 	void createGUI();
 	void refresh(int x, int y);
@@ -63,6 +71,8 @@ private:
 
 	CEGUI::GridLayoutContainer* grid;
 	PuzzleBoard* board;
+	WidgetBlock* imageBlocks;
+
 	int posX, posY;
 	bool blockSelected;
 	int selPosX, selPosY;
@@ -75,10 +85,10 @@ public:
 	BoardLayoutFinder();
 	bool addLayout(std::string name, LayoutDescription desc);
 	bool removeLayout(std::string name);
-	std::vector<std::string> scan(PuzzleBoard* b);
+	std::vector<std::string> scan(PuzzleBoardWidget* pbw);
 private:
 	bool matchLayout(PuzzleBoard* b, LayoutDescription desc, int startX, int startY);
-	void clearLayout(PuzzleBoard* b, LayoutDescription desc, int startX, int startY);
+	void clearLayout(PuzzleBoardWidget* widget, LayoutDescription desc, int startX, int startY, const std::string& name);
 	PuzzleBlock charToBlock(char c);
 	std::map<std::string, LayoutDescription> layouts;
 };

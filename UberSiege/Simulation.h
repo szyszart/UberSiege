@@ -65,6 +65,7 @@ public:
 
 	bool addAnimation(std::string name);
 	void clearAnimations();
+	void clearQueuedAnimations();
 	void advanceAnimations(float timeElapsed) {
 		if(anims.empty()) {
 			// odtwórz kolejn¹ animacjê z kolejki			
@@ -75,7 +76,6 @@ public:
 			if(!currentQueuedAnim) {
 				while(!animQueue.empty() && !currentQueuedAnim) {
 					currentQueuedAnim = fetchAnimation(animQueue.front());
-					std::cout << "popping queued anim " << animQueue.front() << std::endl;
 					animQueue.pop_front();
 				}
 			}			
@@ -89,6 +89,7 @@ public:
 				anim->addTime(timeElapsed);
 				if(anim->hasEnded())  {
 					anim->setTimePosition(0.0);
+					anim->setEnabled(false);
 					anims.erase(it++);
 				}
 				else 
@@ -96,7 +97,9 @@ public:
 			}
 		}
 	}
-	bool hasQueuedAnimations() { return (!animQueue.empty() || currentQueuedAnim); }	
+	bool hasQueuedAnimations() { 
+		return !anims.empty();		
+	}	
 	void enqueueAnimation(std::string name) { animQueue.push_back(name); }	
 private:
 	Ogre::AnimationState* fetchAnimation(std::string name);
@@ -105,7 +108,7 @@ private:
 	int hp;
 	double pos;
 	double vel;
-	double width;	// absolute (not relative to the path)
+	double width;
 	double yaw;
 	double direction;
 	bool active;
@@ -125,10 +128,8 @@ struct Projectile {
 	Unit* unit;
 	Ogre::SceneNode* node;
 	Ogre::Entity* entity;
-	//int range;
 };
 
-// owns Board
 class Player {
 public:
 	Player(std::string name, int initialHP = 2000);
@@ -169,7 +170,6 @@ private:
 
 };
 
-// owns Players, scene data (entities, animations, etc.), Camera
 class Simulation {
 public:
 	Simulation(Application* app);
@@ -181,6 +181,9 @@ public:
 	bool loadMap(MapInfo& info);
 	Ogre::SceneNode* getCameraNode() { return cameraNode; }
 
+	bool hasEnded();
+	Player* getLoser() { return loser; }
+
 	// funkcje udostêpniane skryptom
 	void moveForwards(Unit* unit, double vel = 1.0);
 	void moveBackwards(Unit* unit, double vel = 1.0);
@@ -190,6 +193,7 @@ public:
 	bool requestAnimation(Unit* unit, std::string animName);
 	void queueAnimation(Unit* unit, std::string animName);
 	void stopAnimations(Unit* unit);
+	void stopQueuedAnimations(Unit* unit);
 	double getDistance(Unit* u1, Unit* u2);
 	void throwProjectile(Unit* unit, double velX, double velY, int damage);
 
@@ -221,6 +225,7 @@ private:
 	std::list<Unit*> units;
 	std::list<Projectile> projectiles;
 	MapInfo info;
+	Player* loser;
 
 	Ogre::Vector3 path;
 };

@@ -7,10 +7,12 @@ function onTick(sim, unit, event)
     local foe = sim:getNearestEnemy(unit)       
     if foe ~= nil and sim:getDistance(foe, unit) <= MAX_ATTACK_DISTANCE then               
         sim:stopAnimations(unit)
-        sim:queueAnimation(unit, 'Act: Attack')        
-        sim:inflictDamage(unit, foe, RANGE_DAMAGE)
+        sim:requestAnimation(unit, 'Act: Attack')        
+		local dmg = math.random() * RANGE_DAMAGE	
+        sim:inflictDamage(unit, foe, dmg)
         --sim:throwProjectile(unit, 0.1, 1.0, 20)
     else
+        sim:stopAnimations(unit)	
         sim:requestAnimation(unit, 'Act: Walk_upper')
         sim:requestAnimation(unit, 'Act: Walk_lower')
         sim:moveForwards(unit, WALK_VELOCITY)         
@@ -20,7 +22,7 @@ end
 function onDie(sim, unit, event)
     print('Die called')
     sim:stopAnimations(unit)
-    sim:queueAnimation(unit, 'Act: Death')        
+    sim:requestAnimation(unit, 'Act: Death')        
 end
 
 events = {

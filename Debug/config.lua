@@ -1,20 +1,16 @@
 layouts = {
-    simple = {
+    infantry = {
         layout = {"II", ""},
         unit = "infantry"
     },    
-    infantry = {
+    ram = {
         layout = {"WI", "IW"}, -- { top, bottom }   
         unit = "ram"
     },    
-    simple = {
+    archer = {
         layout = {"MM", ""},
         unit = "archer"
-    },        
---    dragon = {
---        layout = {"FMMF", "MFFM"},
---        unit = "dragon"
---    }
+    }
 }
 
 units = {

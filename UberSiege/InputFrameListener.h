@@ -27,7 +27,6 @@ enum Action {
 
 typedef std::map<OIS::KeyCode, Action> KeyBindings;
 
-// owns GUI (PuzzleBoardWidgets and others)
 class InputFrameListener: public Ogre::FrameListener, public OIS::MouseListener, public OIS::KeyListener {
 public:
 	InputFrameListener(Application* app);
@@ -47,10 +46,10 @@ public:
     bool mouseMoved(const OIS::MouseEvent& evt);
     bool mousePressed(const OIS::MouseEvent& evt, OIS::MouseButtonID id);
     bool mouseReleased(const OIS::MouseEvent& evt, OIS::MouseButtonID id);
-private:
 	void initialize();
+private:
 	void processAction(Action a);
-	bool scanForLayouts(Player* p, std::vector<std::string>& layouts);
+	bool scanForLayouts(PuzzleBoardWidget* p, std::vector<std::string>& layouts);
 	void spawnUnits(Player* p, std::vector<std::string>& layouts);
 	void refreshStats();
 	CEGUI::MouseButton convertButton(OIS::MouseButtonID id);
@@ -68,6 +67,7 @@ private:
 	PuzzleBoardWidget* boardWidget2;
 
 	double timerValue;		// liczba sekund do koñca rozgrywki
+	bool isStarted; 
 
 	std::vector<std::string> p1Layouts;
 	std::vector<std::string> p2Layouts;

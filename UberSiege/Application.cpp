@@ -159,12 +159,12 @@ void Application::processUnitScripts() {
 			.def("requestAnimation",	&Simulation::requestAnimation)
 			.def("queueAnimation",		&Simulation::queueAnimation)
 			.def("stopAnimations",		&Simulation::stopAnimations)
+			.def("stopQueuedAnimations",&Simulation::stopQueuedAnimations)
 			.def("getNearestEnemy",		&Simulation::getNearestEnemy)
 			.def("getDistance",			&Simulation::getDistance)
 			.def("throwProjectile",		&Simulation::throwProjectile)
 			.def("getEnemies",			&Simulation::getEnemiesLua, luabind::raw(_2)),
 		luabind::class_<Unit>("Unit")
-			.property("pos", &Unit::getPos, &Unit::setPos)
 			.def("getPos", &Unit::getPos),
 		luabind::def("registerEvents", &LogicProcessor::registerEvents)
 	];
@@ -176,7 +176,6 @@ void Application::processUnitScripts() {
 			try {
 				std::string unitClass = luabind::object_cast<std::string>(i.key());
 				std::string filename = luabind::object_cast<std::string>(*i);
-				std::cout << "processUnitScripts: processing logic for " << unitClass << std::endl;										
 
 				LogicProcessor::clearHandlers();
 
@@ -315,6 +314,7 @@ bool Application::startup() {
 	root->addFrameListener(listener);
 
 	processConfig();
+	listener->initialize();
 
 	return true;
 }

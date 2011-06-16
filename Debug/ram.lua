@@ -5,15 +5,15 @@ local MOVE_VELOCITY          = 0.05
 
 function onTick(sim, unit, event)
     local foe = sim:getNearestEnemy(unit)       
-    if foe ~=nil then
-        print(sim:getDistance(foe, unit))
-    end
+    
     if foe ~= nil and sim:getDistance(foe, unit) <= MAX_ATTACK_DISTANCE then               
         sim:stopAnimations(unit)
-        sim:queueAnimation(unit, 'Act: Attack')        
-        sim:inflictDamage(unit, foe, ATTACK_DAMAGE)
+        sim:requestAnimation(unit, 'Act: Attack')        
+		local dmg = math.random() * 2.5 * ATTACK_DAMAGE
+        sim:inflictDamage(unit, foe, dmg)
     else
-        sim:requestAnimation(unit, 'Act: Walk_upper')
+        sim:stopAnimations(unit)
+		sim:requestAnimation(unit, 'Act: Walk_upper')
         sim:requestAnimation(unit, 'Act: Walk_lower')
         sim:moveForwards(unit, MOVE_VELOCITY)         
     end
@@ -22,13 +22,16 @@ end
 function onDie(sim, unit, event)
     print('Die called')
     sim:stopAnimations(unit)
-    -- sim:queueAnimation(unit, 'Act: Death')        
+    --sim:queueAnimation(unit, 'Act: Death')        
 end
 
 events = {
     Tick = onTick,
     Die = onDie,
     Init = function(s, u, e) print('Init called') end,
-    Leave = function(s, u, e) print('Leave called') end
+    Leave = function(sim, unit, e) 
+		sim:stopAnimations(unit)
+        sim:requestAnimation(unit, 'Act: Attack')        
+	end
 }
 registerEvents(events)

@@ -5,6 +5,7 @@
 #include <iostream>
 
 InputFrameListener::InputFrameListener(Application* app) {
+	isStarted = false;
 	this->app = app;
 	this->window = app->getRenderWindow();
 	isRunning = true;
@@ -15,8 +16,8 @@ InputFrameListener::InputFrameListener(Application* app) {
 	MapInfo info;
 	app->loadMap("map1", info);
 	simulation->loadMap(info);
-	player1 = new Player("p1");
-	player2 = new Player("p2");
+	player1 = new Player("p1", 1000);
+	player2 = new Player("p2", 1000);
 	simulation->addPlayer(player1);
 	simulation->addPlayer(player2);	
 
@@ -34,12 +35,6 @@ InputFrameListener::InputFrameListener(Application* app) {
 
 	mouse->setEventCallback(this);
 	keyboard->setEventCallback(this);
-
-	initialize();
-	scanForLayouts(player1, p1Layouts);
-	scanForLayouts(player2, p2Layouts);
-	boardWidget1->refreshAll();
-	boardWidget2->refreshAll();
 }
 
 InputFrameListener::~InputFrameListener() {
@@ -62,8 +57,8 @@ void InputFrameListener::unbindKey(OIS::KeyCode code) {
 	bindings.erase(code);
 }
 
-bool InputFrameListener::scanForLayouts(Player* p, std::vector<std::string>& layouts) {
-	std::vector<std::string> found = app->getLayoutFinder()->scan(p->getBoard());
+bool InputFrameListener::scanForLayouts(PuzzleBoardWidget* widget, std::vector<std::string>& layouts) {
+	std::vector<std::string> found = app->getLayoutFinder()->scan(widget);
 	if(found.size() > 0) {
 		layouts.insert(layouts.end(), found.begin(), found.end());
 		return true;
@@ -95,7 +90,7 @@ void InputFrameListener::processAction(Action a) {
 		case P1_SELECT:
 		{
 			boardWidget1->selectCurrent();
-			if(scanForLayouts(player1, p1Layouts))
+			if(scanForLayouts(boardWidget1, p1Layouts))
 				boardWidget1->refreshAll();
 		}
 			break;
@@ -103,7 +98,7 @@ void InputFrameListener::processAction(Action a) {
 		{
 			boardWidget1->clear();
 			p1Layouts.clear();
-			if(scanForLayouts(player1, p1Layouts))
+			if(scanForLayouts(boardWidget1, p1Layouts))
 				boardWidget1->refreshAll();
 		}
 			break;
@@ -112,7 +107,7 @@ void InputFrameListener::processAction(Action a) {
 			spawnUnits(player1, p1Layouts);
 			boardWidget1->accept();
 			p1Layouts.clear();
-			if(scanForLayouts(player1, p1Layouts))
+			if(scanForLayouts(boardWidget1, p1Layouts))
 				boardWidget1->refreshAll();
 		}
 			break;	
@@ -131,7 +126,7 @@ void InputFrameListener::processAction(Action a) {
 		case P2_SELECT:
 		{
 			boardWidget2->selectCurrent();
-			if(scanForLayouts(player2, p2Layouts))
+			if(scanForLayouts(boardWidget2, p2Layouts))
 				boardWidget2->refreshAll();
 		}
 			break;
@@ -139,7 +134,7 @@ void InputFrameListener::processAction(Action a) {
 		{
 			boardWidget2->clear();
 			p2Layouts.clear();
-			if(scanForLayouts(player2, p2Layouts))
+			if(scanForLayouts(boardWidget2, p2Layouts))
 				boardWidget2->refreshAll();
 		}
 			break;
@@ -149,7 +144,7 @@ void InputFrameListener::processAction(Action a) {
 			boardWidget2->accept();
 
 			p2Layouts.clear();
-			if(scanForLayouts(player2, p2Layouts))
+			if(scanForLayouts(boardWidget2, p2Layouts))
 				boardWidget2->refreshAll();
 		}
 			break;
@@ -251,6 +246,7 @@ void InputFrameListener::initialize() {
 	CEGUI::System::getSingleton().setGUISheet(sheet);
 
 	CEGUI::ImagesetManager::getSingleton().create("blocks.imageset");
+	CEGUI::ImagesetManager::getSingleton().create("u_icons.imageset");
 
 	player1->getBoard()->randomize();
 	player2->getBoard()->randomize();
@@ -273,13 +269,20 @@ void InputFrameListener::initialize() {
 	CEGUI::UDim posX = CEGUI::UDim(1.0, 0) - boardWidget2->getWindow()->getWidth();
 	CEGUI::UDim posY = CEGUI::UDim(1.0, 0) - boardWidget2->getWindow()->getHeight();
 	boardWidget2->getWindow()->setPosition(CEGUI::UVector2(posX, posY));
+
+	scanForLayouts(boardWidget1, p1Layouts);
+	scanForLayouts(boardWidget2, p2Layouts);
+	boardWidget1->refreshAll();
+	boardWidget2->refreshAll();
+
+	isStarted = true;
 }
 
 void InputFrameListener::refreshStats() {
 	std::ostringstream textStream;
 	int secondsLeft = (int)timerValue;
-	textStream << "Gracz 1: " << player1->getHP() << std::endl
-			   << "Gracz 2: " << player2->getHP() << std::endl << " " << std::endl
+	textStream << "Player 1: " << player1->getHP() << std::endl
+			   << "Player 2: " << player2->getHP() << std::endl << " " << std::endl
 			   << std::setfill('0') << std::setw(2) << (secondsLeft / 60) << ':' 
 			   << std::setfill('0') << std::setw(2) << (secondsLeft % 60);
 
@@ -291,30 +294,46 @@ bool InputFrameListener::frameStarted(const Ogre::FrameEvent& evt) {
 	mouse->capture();	
 
 	timerValue -= evt.timeSinceLastFrame;
-	simulation->tick(evt.timeSinceLastFrame);
+	if(timerValue < 0) timerValue = 0;
+	
+	if(isStarted && ((timerValue <= 0) || simulation->hasEnded())) {
+		Player* p = simulation->getLoser();
+		std::stringstream msg;
+		if(timerValue <= 0)
+			msg << "Time is up!" << std::endl;
+		if(p == player1)
+			msg << "Player 2 has won!" << std::endl;
+		else if(p == player2)
+			msg << "Player 1 has won!" << std::endl;
+		else
+			msg << "A draw!" << std::endl;
+		statsWindow->setText(msg.str());				
+	}
+	else {
+		simulation->tick(evt.timeSinceLastFrame);
+	
+		Ogre::SceneNode* cameraNode = simulation->getCameraNode();
+		if(keyboard->isKeyDown(OIS::KC_5)) {
+			cameraNode->rotate(Ogre::Vector3::UNIT_Y, Ogre::Radian(-0.1),Ogre::Node::TS_WORLD);
+		}
+		if(keyboard->isKeyDown(OIS::KC_6)) {
+			cameraNode->rotate(Ogre::Vector3::UNIT_Y, Ogre::Radian(0.1),Ogre::Node::TS_WORLD);
+		}
+		if(keyboard->isKeyDown(OIS::KC_1)) {
+			cameraNode->translate(0, -0.1, 0);		
+		}
+		if(keyboard->isKeyDown(OIS::KC_2)) {
+			cameraNode->translate(0, 0.1, 0);
+		}
+		if(keyboard->isKeyDown(OIS::KC_3)) {
+			cameraNode->rotate(Ogre::Vector3::UNIT_X, Ogre::Radian(-0.01),Ogre::Node::TS_WORLD);
+		}
+		if(keyboard->isKeyDown(OIS::KC_4)) {
+			cameraNode->rotate(Ogre::Vector3::UNIT_X, Ogre::Radian(0.01),Ogre::Node::TS_WORLD);
+		}
 
-	Ogre::SceneNode* cameraNode = simulation->getCameraNode();
-	if(keyboard->isKeyDown(OIS::KC_5)) {
-		cameraNode->rotate(Ogre::Vector3::UNIT_Y, Ogre::Radian(-0.1),Ogre::Node::TS_WORLD);
+		refreshStats();
 	}
-	if(keyboard->isKeyDown(OIS::KC_6)) {
-		cameraNode->rotate(Ogre::Vector3::UNIT_Y, Ogre::Radian(0.1),Ogre::Node::TS_WORLD);
-	}
-	if(keyboard->isKeyDown(OIS::KC_1)) {
-		cameraNode->translate(0, -0.1, 0);		
-	}
-	if(keyboard->isKeyDown(OIS::KC_2)) {
-		cameraNode->translate(0, 0.1, 0);
-	}
-	if(keyboard->isKeyDown(OIS::KC_3)) {
-		cameraNode->rotate(Ogre::Vector3::UNIT_X, Ogre::Radian(-0.01),Ogre::Node::TS_WORLD);
-	}
-	if(keyboard->isKeyDown(OIS::KC_4)) {
-		cameraNode->rotate(Ogre::Vector3::UNIT_X, Ogre::Radian(0.01),Ogre::Node::TS_WORLD);
-	}
-
-	refreshStats();
-
 	if(window->isClosed() || !isRunning)
 		return false;
 	return true;

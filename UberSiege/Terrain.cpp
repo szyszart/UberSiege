@@ -13,7 +13,7 @@ TerrainLoader::TerrainLoader(Ogre::SceneManager* sm) {
 	defaultimp.inputScale = 10;
 	defaultimp.minBatchSize = 33;
 	defaultimp.maxBatchSize = 65;
-	// textures
+
 	defaultimp.layerList.resize(3);
 	defaultimp.layerList[0].worldSize = 100;
 	defaultimp.layerList[0].textureNames.push_back("dirt_grayrocky_diffusespecular.dds");

@@ -78,9 +78,19 @@ PuzzleBoardWidget::PuzzleBoardWidget(PuzzleBoard* b) {
 	posX = posY = selPosX = selPosY = 0;
 	blockSelected = false;
 	grid = NULL;
+	imageBlocks = new WidgetBlock[board->getWidth() * board->getHeight()];
 }
 
 PuzzleBoardWidget::~PuzzleBoardWidget() {
+	delete[] imageBlocks;
+}
+
+WidgetBlock PuzzleBoardWidget::getAt(int x, int y) {
+	return imageBlocks[board->getWidth() * y + x];
+}
+
+void PuzzleBoardWidget::setAt(WidgetBlock& b, int x, int y) {
+	imageBlocks[board->getWidth() * y + x] = b;
 }
 
 void PuzzleBoardWidget::createGUI() {
@@ -210,7 +220,7 @@ void PuzzleBoardWidget::refresh(int x, int y) {
 
 	if(staticWindow->getChildCount() == 0)
 		return;
-	CEGUI::Window* btnWindow = staticWindow->getChildAtIdx(0);
+	CEGUI::Window* btnWindow = staticWindow->getChildAtIdx(0);	
 	switch(board->getAt(x, y)) {
 		case BLOCK_WOOD:
 			btnWindow->setProperty("Image", "set:Blocks image:wood");
@@ -225,7 +235,16 @@ void PuzzleBoardWidget::refresh(int x, int y) {
 			btnWindow->setProperty("Image", "set:Blocks image:magic");
 			break;
 		default:
-			btnWindow->setProperty("Image", "set:Blocks image:empty");			
+		{
+			WidgetBlock b = getAt(x, y);
+			if(b.layout.empty())
+				btnWindow->setProperty("Image", "set:Blocks image:empty");
+			else {
+				std::stringstream imageDesc;
+				imageDesc << "set: u_icons image: " << b.layout << b.blockNumber;
+				btnWindow->setProperty("Image", imageDesc.str());
+			}
+		}			
 			break;
 	}
 }
@@ -256,9 +275,10 @@ bool BoardLayoutFinder::removeLayout(std::string name) {
 	return (layouts.erase(name) == 1);
 }
 
-std::vector<std::string> BoardLayoutFinder::scan(PuzzleBoard* board) {
+std::vector<std::string> BoardLayoutFinder::scan(PuzzleBoardWidget* widget) {
 	using namespace std;
 	vector<string> result;
+	PuzzleBoard* board = widget->getBoard();
 	if(board->getHeight() < 1) 
 		return result;
 
@@ -274,14 +294,14 @@ std::vector<std::string> BoardLayoutFinder::scan(PuzzleBoard* board) {
 
 		for(int y = ((layoutHeight == 1) ? 0 : 1); y >= layoutHeight - 1; y--) {
 			for(int x = 0; x <= board->getWidth() - layoutWidth; x += 2) {
-				if(matchLayout(board, cur, x, board->getHeight() - 1 - y)) {					
+				if(matchLayout(board, cur, x, board->getHeight() - 1 - y)) {	
 					result.push_back(iter->first);
-					clearLayout(board, cur, x, board->getHeight() - 1 - y);
+					clearLayout(widget, cur, x, board->getHeight() - 1 - y, iter->first);
 					x += layoutWidth;
 					numFreeBlocks -= layoutWidth * layoutHeight;
 					if(numFreeBlocks <= 0)
 						return result;
-				}				
+				}
 			}
 		}
 	}
@@ -303,13 +323,19 @@ bool BoardLayoutFinder::matchLayout(PuzzleBoard* board, LayoutDescription desc, 
 	return true;
 }
 
-void BoardLayoutFinder::clearLayout(PuzzleBoard* board, LayoutDescription desc, int startX, int startY) {
+void BoardLayoutFinder::clearLayout(PuzzleBoardWidget* widget, LayoutDescription desc, int startX, int startY, const std::string& name) {
+	PuzzleBoard* board = widget->getBoard();
 	int layoutWidth = desc.first.length();	// zak³adamy, ¿e wszystkie uk³ady s¹ prostok¹tne; dba o to metoda addLayout
 	int layoutHeight = (desc.second.empty() ? 1 : 2);
 
+	int i = 1;
 	for(int y = startY; y < startY + layoutHeight; y++)
 		for(int x = startX; x < startX + layoutWidth; x++) {
 			board->setAt(BLOCK_EMPTY, x, y);
+			WidgetBlock w;
+			w.blockNumber = i++;
+			w.layout = name;
+			widget->setAt(w, x, y);
 		}
 }
 

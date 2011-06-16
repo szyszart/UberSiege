@@ -26,8 +26,7 @@ material Castle_roof
 			diffuse 0.10628724256585897 0.044955269172121115 0.020224471691615453 1.0
 			specular 0.5 0.5 0.5 1.0 12.5
 			emissive 0.0 0.0 0.0 1.0
-			scene_blend one zero
-			vray <bpy ID property from "MACastle_roof">
+			scene_blend one zero			
 		}
 	}
 }
@@ -43,8 +42,7 @@ material Castle_stone
 			diffuse 0.13435481986932185 0.13435481986932185 0.13435481986932185 1.0
 			specular 0.02380952425301075 0.02380952425301075 0.02380952425301075 1.0 10.75
 			emissive 0.0 0.0 0.0 1.0
-			scene_blend one zero
-			vray <bpy ID property from "MACastle_stone">
+			scene_blend one zero			
 		}
 	}
 }
